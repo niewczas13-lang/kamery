@@ -553,8 +553,13 @@ def _render_runtime_yaml(streams: list[StreamDescriptor], secrets: dict[str, str
         '  listen: ":1984"',
         "rtsp:",
         '  listen: ":8554"',
-        "streams:",
     ]
+    preload_streams = _preload_stream_names(streams)
+    if preload_streams:
+        lines.append("preload:")
+        for stream_name in preload_streams:
+            lines.append(f"  {stream_name}: video")
+    lines.append("streams:")
     for stream in streams:
         lines.append(f"  {stream.stream_name}:")
         if stream.experimental:
@@ -565,6 +570,16 @@ def _render_runtime_yaml(streams: list[StreamDescriptor], secrets: dict[str, str
     if not streams:
         lines.append("  # no streams configured yet")
     return "\n".join(lines) + "\n"
+
+
+def _preload_stream_names(streams: list[StreamDescriptor]) -> list[str]:
+    return [
+        stream.stream_name
+        for stream in streams
+        if stream.is_recommended_for_grid
+        or stream.experimental
+        or (stream.camera_slug in {"lukow_c8c_60", "lukow_c8c_102"} and stream.quality_role == "sub")
+    ]
 
 
 def _missing_secret_refs(streams: list[StreamDescriptor], secrets: dict[str, str]) -> list[str]:

@@ -21,6 +21,9 @@ stream can still be usable despite warnings.
 
 Use these rules:
 
+- The generated go2rtc runtime preloads wall SUB streams as video-only. This
+  reduces cold starts, but it will not mask long RTSP EOFs or a camera link that
+  stops producing frames.
 - If FFmpeg with TCP/video-only fails with EOF, the problem is upstream/go2rtc,
   not only React.
 - If FFmpeg runs 120 s but the panel reloads players, inspect the live wall

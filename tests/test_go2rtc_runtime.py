@@ -136,6 +136,11 @@ class Go2RtcRuntimeTests(unittest.TestCase):
         rendered = self.runtime_config_path.read_text(encoding="utf-8")
         self.assertIn("secret-h9c", rendered)
         self.assertIn("lukow_h9c_98_lens2_sub", rendered)
+        self.assertIn("preload:", rendered)
+        self.assertIn("  lukow_h9c_98_sub: video", rendered)
+        self.assertIn("  lukow_h9c_98_lens2_sub: video", rendered)
+        self.assertIn("  lukow_c8w_97_sub: video", rendered)
+        self.assertNotIn("  lukow_h9c_98_main: video", rendered)
 
     def test_runtime_render_requires_all_stream_secrets(self) -> None:
         self._seed_stage_3a_cameras()

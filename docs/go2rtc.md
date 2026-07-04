@@ -61,6 +61,16 @@ Do not commit `secrets.local.env`.
 database and `CAMERA102_PASSWORD` is configured, the Lukow start scripts render
 it as an experimental stream so the operator wall can show a manual-load tile.
 
+## Preload for the Operator Wall
+
+The generated runtime config includes `preload` entries for video-only SUB
+streams used by the operator wall, including manual-load C8C SUB streams. This
+keeps go2rtc connected to the camera so the wall is less likely to cold-start
+RTSP when a tile mounts or reloads.
+
+This is not a DVR cache. It trades a small amount of constant camera/go2rtc load
+for fewer visible loading cycles.
+
 To include the unstable diagnostic stream for `.102`, render with:
 
 ```powershell

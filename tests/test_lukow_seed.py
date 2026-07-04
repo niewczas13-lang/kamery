@@ -66,6 +66,44 @@ class LukowSeedTests(unittest.TestCase):
         self.assertIn("CAMERA97_PASSWORD", error)
         self.assertIn("CAMERA60_PASSWORD", error)
 
+    def test_lukow_runtime_preloads_wall_substreams_without_main_streams(self) -> None:
+        secrets_path = Path("runtime/test-secrets.local.env")
+        secrets_path.parent.mkdir(parents=True, exist_ok=True)
+        secrets_path.write_text(
+            "\n".join(
+                [
+                    "CAMERA98_PASSWORD=secret-h9c",
+                    "CAMERA97_PASSWORD=secret-c8w",
+                    "CAMERA60_PASSWORD=secret-c8c",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        output_path = Path("runtime/test-go2rtc.yaml")
+        try:
+            with Session(self.engine) as session:
+                seed_lukow_cameras(session)
+                render_go2rtc_runtime_config(
+                    session,
+                    secrets_env_file=str(secrets_path),
+                    output_path=output_path,
+                )
+
+            rendered = output_path.read_text(encoding="utf-8")
+
+            self.assertIn("preload:", rendered)
+            self.assertIn("  lukow_h9c_98_sub: video", rendered)
+            self.assertIn("  lukow_h9c_98_lens2_sub: video", rendered)
+            self.assertIn("  lukow_c8w_97_sub: video", rendered)
+            self.assertIn("  lukow_c8c_60_sub: video", rendered)
+            self.assertNotIn("  lukow_h9c_98_main: video", rendered)
+            self.assertNotIn("  lukow_h9c_98_lens2_main: video", rendered)
+            self.assertNotIn("  lukow_c8c_60_main: video", rendered)
+        finally:
+            secrets_path.unlink(missing_ok=True)
+            output_path.unlink(missing_ok=True)
+
 
 if __name__ == "__main__":
     unittest.main()
