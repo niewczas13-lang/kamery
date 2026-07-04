@@ -47,6 +47,26 @@ Direct RTSP bez go2rtc, Frigate i panelu:
 TEST_DIRECT_LUKOW.bat
 ```
 
+Dluzszy test stabilnosci, gdy kamera dziala chwile i potem zaczyna buforowac albo pada:
+
+```powershell
+TEST_STABILITY_LUKOW.bat
+```
+
+Domyslnie testuje H9C 98 obiektyw 1, H9C 98 obiektyw 2 i C8W 97: ping/RTSP port, go2rtc sekwencyjnie, go2rtc rownolegle oraz direct RTSP bez go2rtc. To moze potrwac kilkanascie minut, ale pokazuje postep po kazdym streamie.
+
+Wariant szybki:
+
+```powershell
+TEST_STABILITY_LUKOW.bat -Quick
+```
+
+Wariant mocniejszy, jezeli problem pojawia sie dopiero po kilku minutach:
+
+```powershell
+TEST_STABILITY_LUKOW.bat -DurationSeconds 300
+```
+
 Nie wklejaj raw logow go2rtc. Uzywaj `scripts\go2rtc_logs_sanitized.ps1`.
 
 ## Wazne dla C8C 60
