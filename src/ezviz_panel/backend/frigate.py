@@ -134,7 +134,7 @@ def fetch_frigate_events(
     timeout: float = 2.0,
     transport: httpx.BaseTransport | None = None,
 ) -> dict[str, Any]:
-    payload = _fetch_frigate_json(frigate_url, "/api/events", timeout=timeout, transport=transport)
+    payload = _fetch_frigate_json(frigate_url, ["/api/events", "/api/events/search"], timeout=timeout, transport=transport)
     if not payload["reachable"]:
         return {"reachable": False, "events": None, "error": payload["error"]}
     return {"reachable": True, "events": sanitize_sensitive_object(payload["data"]), "error": None}
@@ -431,26 +431,42 @@ def _camera_yaml(camera: FrigateCameraEntry) -> list[str]:
 
 def _fetch_frigate_json(
     frigate_url: str,
-    path: str,
+    path: str | list[str],
     *,
     timeout: float,
     transport: httpx.BaseTransport | None,
 ) -> dict[str, Any]:
     base_url = frigate_url.rstrip("/")
+    paths = [path] if isinstance(path, str) else path
+    errors: list[str] = []
     try:
         client_kwargs: dict[str, Any] = {"timeout": timeout, "trust_env": False}
         if transport is not None:
             client_kwargs["transport"] = transport
         with httpx.Client(**client_kwargs) as client:
-            response = client.get(f"{base_url}{path}")
-            response.raise_for_status()
-            try:
-                data: Any = response.json()
-            except ValueError:
-                data = response.text
+            for candidate in paths:
+                response = client.get(f"{base_url}{candidate}")
+                if response.status_code >= 400:
+                    errors.append(_frigate_http_error(response, candidate))
+                    continue
+                try:
+                    data: Any = response.json()
+                except ValueError:
+                    data = response.text
+                return {"reachable": True, "data": sanitize_sensitive_object(data), "error": None}
     except (httpx.HTTPError, OSError) as exc:
         return {"reachable": False, "data": None, "error": sanitize_text(str(exc))}
-    return {"reachable": True, "data": sanitize_sensitive_object(data), "error": None}
+    return {"reachable": False, "data": None, "error": "; ".join(errors) or "Frigate API not reachable"}
+
+
+def _frigate_http_error(response: httpx.Response, path: str) -> str:
+    detail = response.text.strip()
+    if len(detail) > 240:
+        detail = f"{detail[:240]}..."
+    message = f"Frigate API {response.status_code} for {path}"
+    if detail:
+        message = f"{message}: {detail}"
+    return sanitize_text(message)
 
 
 def _existing_frigate_event_ids(session: Session) -> set[str]:

@@ -193,6 +193,23 @@ class FrigateClientTests(unittest.TestCase):
         self.assertNotIn("secret-h9c", str(payload))
         self.assertIn("rtsp://admin:***@", str(payload))
 
+    def test_events_fall_back_to_search_endpoint_when_list_endpoint_errors(self) -> None:
+        requested_paths: list[str] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            requested_paths.append(request.url.path)
+            if request.url.path == "/api/events":
+                return httpx.Response(500, text="events list failed")
+            if request.url.path == "/api/events/search":
+                return httpx.Response(200, json=[{"id": "event-2", "camera": "lukow_h9c_98", "label": "person"}])
+            return httpx.Response(404, text="not found")
+
+        payload = fetch_frigate_events("http://127.0.0.1:5000", transport=httpx.MockTransport(handler))
+
+        self.assertTrue(payload["reachable"])
+        self.assertEqual(payload["events"][0]["id"], "event-2")
+        self.assertEqual(requested_paths, ["/api/events", "/api/events/search"])
+
     def test_sync_frigate_events_imports_once(self) -> None:
         engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
         Base.metadata.create_all(engine)
