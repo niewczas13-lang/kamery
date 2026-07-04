@@ -103,7 +103,7 @@ export function LiveWallConsole({
       </div>
 
       <div className="quality-help stable-wall-note">
-        <span>Podgląd stabilny: szybkie streamy SUB, buforowany MP4, audio wyłączone.</span>
+        <span>Podgląd stabilny: szybkie streamy SUB, MSE/MJPEG, audio wyłączone.</span>
       </div>
 
       <div className="live-wall-layout">

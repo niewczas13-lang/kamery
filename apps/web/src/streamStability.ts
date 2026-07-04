@@ -5,7 +5,7 @@ export type ActivePreviewLimit = "2" | "4" | "6" | "9" | "unlimited";
 export type StreamStabilityLabel = "stabilny" | "obniżona stabilność" | "niestabilny" | "eksperymentalny";
 export type StreamStabilityTone = "good" | "warn" | "bad";
 
-export const stableWallPlaybackMode: Go2RtcPlaybackMode = "mp4";
+export const stableWallPlaybackMode: Go2RtcPlaybackMode = "mse,mjpeg";
 export const operatorWallDefaults = {
   previewProfile: "fast",
   activePreviewLimit: "6",
@@ -52,8 +52,22 @@ export function liveTilePlaybackMode(tile: {
   lens?: string | null;
   camera?: { slug?: string | null; reliability_status?: string | null } | null;
 }, stream?: { video_codec?: string | null } | null): Go2RtcPlaybackMode {
-  void tile;
-  void stream;
+  const codec = String(stream?.video_codec || "").toLowerCase();
+  if (codec.includes("h265") || codec.includes("h.265") || codec.includes("hevc")) {
+    return "mse";
+  }
+  const slug = String(tile.camera_slug || tile.camera?.slug || "").toLowerCase();
+  const lens = String(tile.lens || "").toLowerCase();
+  const reliability = String(tile.camera?.reliability_status || "").toLowerCase();
+  if (
+    slug.includes("c8c_60") ||
+    slug.includes("c8c_102") ||
+    reliability === "unstable" ||
+    reliability === "experimental" ||
+    (slug === "lukow_h9c_98" && lens === "lens2")
+  ) {
+    return "mjpeg";
+  }
   return stableWallPlaybackMode;
 }
 

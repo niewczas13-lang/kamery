@@ -74,14 +74,14 @@ describe("stream links", () => {
     expect(url).not.toContain("@");
   });
 
-  it("can force the go2rtc MP4 player for buffered wall playback", () => {
+  it("can force the go2rtc MSE player with MJPEG fallback for stable wall playback", () => {
     const url = buildGo2RtcPlayerUrl("http://127.0.0.1:1984", "lukow_h9c_98_sub", {
       audio: "off",
-      mode: "mp4"
+      mode: "mse,mjpeg"
     });
     const parsed = new URL(url);
 
-    expect(parsed.searchParams.get("mode")).toBe("mp4");
+    expect(parsed.searchParams.get("mode")).toBe("mse,mjpeg");
     expect(parsed.searchParams.get("media")).toBe("video");
     expect(url).not.toContain("rtsp://");
     expect(url).not.toContain("@");
@@ -529,7 +529,7 @@ describe("stream stability helpers", () => {
     expect(first.src).not.toContain("@");
   });
 
-  it("uses buffered MP4 playback for live wall iframe players by default", () => {
+  it("uses MSE plus MJPEG fallback for live wall iframe players by default", () => {
     const identity = buildLiveTilePlayerIdentity({
       baseUrl: "http://127.0.0.1:1984",
       tileId: "lukow_c8w_97:single",
@@ -539,21 +539,21 @@ describe("stream stability helpers", () => {
     });
     const parsed = new URL(identity.src);
 
-    expect(parsed.searchParams.get("mode")).toBe("mp4");
+    expect(parsed.searchParams.get("mode")).toBe("mse,mjpeg");
     expect(parsed.searchParams.get("media")).toBe("video");
     expect(parsed.searchParams.get("muted")).toBe("1");
   });
 
-  it("uses buffered MP4 playback for HEVC/H265 live tiles", () => {
-    expect(liveTilePlaybackMode({ camera_slug: "lukow_h9c_98", lens: "lens2" }, { video_codec: "H265" })).toBe("mp4");
+  it("never forces MP4 or MJPEG-only playback for HEVC/H265 live tiles", () => {
+    expect(liveTilePlaybackMode({ camera_slug: "lukow_h9c_98", lens: "lens2" }, { video_codec: "H265" })).toBe("mse");
     expect(
       liveTilePlaybackMode(
         { camera_slug: "lukow_c8c_60", lens: "single", camera: { reliability_status: "degraded" } },
         { video_codec: "HEVC" }
       )
-    ).toBe("mp4");
-    expect(liveTilePlaybackMode({ camera_slug: "lukow_c8c_60", lens: "single" }, { video_codec: "H264" })).toBe("mp4");
-    expect(liveTilePlaybackMode({ camera_slug: "lukow_c8w_97", lens: "single" }, { video_codec: "H265" })).toBe("mp4");
+    ).toBe("mse");
+    expect(liveTilePlaybackMode({ camera_slug: "lukow_c8c_60", lens: "single" }, { video_codec: "H264" })).toBe("mjpeg");
+    expect(liveTilePlaybackMode({ camera_slug: "lukow_c8w_97", lens: "single" }, { video_codec: "H265" })).toBe("mse");
 
     const identity = buildLiveTilePlayerIdentity({
       baseUrl: "http://127.0.0.1:1984",
@@ -564,7 +564,7 @@ describe("stream stability helpers", () => {
       mode: liveTilePlaybackMode({ camera_slug: "lukow_h9c_98", lens: "lens2" }, { video_codec: "H265" })
     });
 
-    expect(new URL(identity.src).searchParams.get("mode")).toBe("mp4");
+    expect(new URL(identity.src).searchParams.get("mode")).toBe("mse");
   });
 
   it("marks paused live tiles so hover controls cannot block manual loading", () => {
