@@ -41,6 +41,10 @@ if (-not $SkipDocker) {
             docker compose up -d --force-recreate go2rtc frigate
         } else {
             docker compose up -d --force-recreate go2rtc
+            if (-not $SkipFrigate) {
+                Write-Host "Zatrzymuje Frigate/NVR dla stabilnego live view..."
+                docker compose stop frigate
+            }
         }
     } else {
         Write-Host "Pominieto docker compose: brak gotowego runtime/config/go2rtc/go2rtc.yaml."

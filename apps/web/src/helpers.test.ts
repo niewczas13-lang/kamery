@@ -242,6 +242,12 @@ describe("operator live wall tiles", () => {
     });
   });
 
+  it("keeps both H9C lenses first even when backend camera order differs", () => {
+    const result = buildOperatorTiles([...cameras].reverse(), streams, policies, { separateLenses: true, showNoVideoInGrid: false });
+
+    expect(result.tiles.map((tile) => tile.tile_id)).toEqual(["lukow_h9c_98:lens1", "lukow_h9c_98:lens2", "lukow_c8w_97:single"]);
+  });
+
   it("keeps no-video cameras outside the main grid by default", () => {
     const result = buildOperatorTiles(cameras, streams, policies, { separateLenses: true, showNoVideoInGrid: false });
 

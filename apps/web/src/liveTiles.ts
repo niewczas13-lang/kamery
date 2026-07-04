@@ -91,8 +91,9 @@ export function buildOperatorTiles(
       tiles.push(makeTile(camera, cameraStreams, policy, hasLens2 ? "combined" : "single"));
     }
   }
+  const sortedTiles = [...tiles].sort(compareOperatorTiles);
   return {
-    tiles: tiles.filter((tile) => matchesStatusFilter(tile, options.statusFilter || "all")),
+    tiles: sortedTiles.filter((tile) => matchesStatusFilter(tile, options.statusFilter || "all")),
     noVideoCameras
   };
 }
@@ -255,6 +256,27 @@ function matchesStatusFilter(tile: OperatorTile, filter: TileStatusFilter): bool
     return !tile.default_stream_name;
   }
   return true;
+}
+
+function compareOperatorTiles(left: OperatorTile, right: OperatorTile): number {
+  const rank = tileRank(left) - tileRank(right);
+  if (rank !== 0) {
+    return rank;
+  }
+  return left.tile_id.localeCompare(right.tile_id);
+}
+
+function tileRank(tile: OperatorTile): number {
+  if (tile.camera_slug === "lukow_h9c_98" && tile.lens === "lens1") {
+    return 10;
+  }
+  if (tile.camera_slug === "lukow_h9c_98" && tile.lens === "lens2") {
+    return 11;
+  }
+  if (tile.camera_slug === "lukow_c8w_97") {
+    return 20;
+  }
+  return 100 + tile.tile_id.charCodeAt(0);
 }
 
 export function tileQualityText(tile: OperatorTile, stream: Stream | undefined): string {
