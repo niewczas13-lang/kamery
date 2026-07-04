@@ -80,7 +80,7 @@ LUKOW_CAMERA_SEEDS = [
         has_ptz=True,
         has_onvif=True,
         has_snapshot=False,
-        notes="Seeded as unstable/manual-load live tile. SUB uses /ch1/sub to reduce load; Frigate remains disabled by default.",
+        notes="Seeded as unstable/manual-load live tile. SUB uses /ch1/sub to reduce load; Frigate uses SUB-only experimental NVR.",
     ),
     LukowCameraSeed(
         slug="lukow_c8c_102",
@@ -98,7 +98,7 @@ LUKOW_CAMERA_SEEDS = [
         has_ptz=True,
         has_onvif=True,
         has_snapshot=False,
-        notes="Seeded local second C8C camera. Keep NVR disabled by policy until LAN stability is confirmed.",
+        notes="Seeded local second C8C camera. Frigate uses SUB-only experimental NVR to avoid MAIN load.",
     ),
 ]
 

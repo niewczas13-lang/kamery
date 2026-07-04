@@ -88,16 +88,28 @@ class FrigateConfigTests(unittest.TestCase):
         self.assertEqual(c8w.detect_stream, "lukow_c8w_97_sub")
         self.assertEqual(c8w.record_stream, "lukow_c8w_97_sub")
 
-    def test_unstable_or_degraded_cameras_are_skipped_from_default_nvr(self) -> None:
+    def test_all_lukow_views_are_rendered_for_frigate_with_c8c_on_substreams(self) -> None:
+        with Session(self.engine) as session:
+            result = render_frigate_preview(session)
+
+        entries = {camera.name: camera for camera in result.cameras}
+        self.assertEqual(
+            sorted(entries),
+            ["lukow_c8c_102", "lukow_c8c_60", "lukow_c8w_97", "lukow_h9c_98", "lukow_h9c_98_lens2"],
+        )
+        self.assertEqual(entries["lukow_c8c_60"].detect_stream, "lukow_c8c_60_sub")
+        self.assertEqual(entries["lukow_c8c_60"].record_stream, "lukow_c8c_60_sub")
+        self.assertEqual(entries["lukow_c8c_102"].detect_stream, "lukow_c8c_102_sub")
+        self.assertEqual(entries["lukow_c8c_102"].record_stream, "lukow_c8c_102_sub")
+        self.assertIn("lukow_c8c_60: experimental NVR target, detect/record on SUB only", result.warnings)
+        self.assertIn("lukow_c8c_102: experimental NVR target, detect/record on SUB only", result.warnings)
+
+    def test_unknown_lukow_camera_is_still_skipped_from_default_nvr(self) -> None:
         with Session(self.engine) as session:
             result = render_frigate_preview(session)
 
         names = [camera.name for camera in result.cameras]
-        self.assertNotIn("lukow_c8c_60", names)
-        self.assertNotIn("lukow_c8c_102", names)
         self.assertNotIn("lukow_h8_101", names)
-        self.assertIn("lukow_c8c_60: skipped unstable/disabled NVR target", result.warnings)
-        self.assertIn("lukow_c8c_102: skipped unstable/disabled NVR target", result.warnings)
         self.assertIn("lukow_h8_101: skipped until CAMERA101_PASSWORD is available", result.warnings)
 
     def test_runtime_config_writes_to_runtime_path_without_secrets(self) -> None:
@@ -108,19 +120,21 @@ class FrigateConfigTests(unittest.TestCase):
 
             content = output.read_text(encoding="utf-8")
             self.assertEqual(result.output_path, output)
-            self.assertNotIn("lukow_c8c_60", content)
+            self.assertIn("lukow_c8c_60", content)
+            self.assertIn("rtsp://go2rtc:8554/lukow_c8c_60_sub", content)
+            self.assertNotIn("rtsp://go2rtc:8554/lukow_c8c_60_main", content)
             self.assertNotIn("secret-h9c", content)
 
-    def test_c8c_60_recording_policy_defaults_to_disabled(self) -> None:
+    def test_c8c_60_recording_policy_defaults_to_events_on_substream(self) -> None:
         with Session(self.engine) as session:
             camera = session.query(Camera).filter_by(slug="lukow_c8c_60").one()
             policy = get_or_create_recording_policy(session, camera)
 
-            self.assertEqual(policy.mode, "disabled")
-            self.assertEqual(policy.retention_days, 7)
-            self.assertFalse(policy.enabled)
+            self.assertEqual(policy.mode, "events_only")
+            self.assertEqual(policy.retention_days, 1)
+            self.assertTrue(policy.enabled)
             self.assertFalse(policy.record_main_stream)
-            self.assertFalse(policy.detect_sub_stream)
+            self.assertTrue(policy.detect_sub_stream)
 
     def test_explicit_disabled_recording_policy_is_respected(self) -> None:
         with Session(self.engine) as session:

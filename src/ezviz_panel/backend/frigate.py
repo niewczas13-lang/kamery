@@ -19,10 +19,20 @@ HEVC_NVR_WARNING = "HEVC/H.265 recordings may not play in every browser; H.264 f
 DEFAULT_FRIGATE_TARGETS = {
     "lukow_h9c_98": {"retention_days": 2},
     "lukow_c8w_97": {"retention_days": 1},
+    "lukow_c8c_60": {
+        "retention_days": 1,
+        "record_stream_role": "sub",
+        "allow_unstable": True,
+        "warning": "lukow_c8c_60: experimental NVR target, detect/record on SUB only",
+    },
+    "lukow_c8c_102": {
+        "retention_days": 1,
+        "record_stream_role": "sub",
+        "allow_unstable": True,
+        "warning": "lukow_c8c_102: experimental NVR target, detect/record on SUB only",
+    },
 }
 SKIPPED_TARGET_WARNINGS = {
-    "lukow_c8c_60": "lukow_c8c_60: skipped unstable/disabled NVR target",
-    "lukow_c8c_102": "lukow_c8c_102: skipped unstable/disabled NVR target",
     "lukow_h8_101": "lukow_h8_101: skipped until CAMERA101_PASSWORD is available",
 }
 VALID_RECORDING_MODES = {"disabled", "events_only", "continuous", "continuous_selected_hours"}
@@ -252,7 +262,13 @@ def _frigate_camera_entries(session: Session) -> tuple[list[FrigateCameraEntry],
         if camera is None:
             warnings.append(f"{slug}: skipped because camera is not present")
             continue
-        if camera_reliability_status(camera) == "unstable" or camera.video_status in {"failed", "unavailable"}:
+        target = DEFAULT_FRIGATE_TARGETS[slug]
+        if target.get("warning"):
+            warnings.append(str(target["warning"]))
+        if (
+            camera_reliability_status(camera) == "unstable"
+            and not target.get("allow_unstable")
+        ) or camera.video_status in {"failed", "unavailable"}:
             warnings.append(f"{slug}: skipped unstable/disabled NVR target")
             continue
         policy = _effective_policy(camera)
@@ -267,12 +283,27 @@ def _effective_policy(camera: Camera) -> dict[str, Any]:
     defaults = DEFAULT_FRIGATE_TARGETS.get(camera.slug, {"retention_days": 1})
     policy = camera.recording_policy
     if policy is None or _should_apply_default_recording_policy(policy, camera):
-        return {"mode": "events_only", "retention_days": defaults["retention_days"]}
+        return {
+            "mode": "events_only",
+            "retention_days": defaults["retention_days"],
+            "detect_stream_role": defaults.get("detect_stream_role", "sub"),
+            "record_stream_role": defaults.get("record_stream_role", "main"),
+        }
     if policy.mode == "disabled":
         return {"mode": "disabled", "retention_days": policy.retention_days}
     if camera.slug in DEFAULT_FRIGATE_TARGETS and policy.mode == "events_only" and policy.retention_days == 7:
-        return {"mode": policy.mode, "retention_days": defaults["retention_days"]}
-    return {"mode": policy.mode, "retention_days": policy.retention_days}
+        return {
+            "mode": policy.mode,
+            "retention_days": defaults["retention_days"],
+            "detect_stream_role": "sub" if policy.detect_sub_stream else "main",
+            "record_stream_role": defaults.get("record_stream_role", "main"),
+        }
+    return {
+        "mode": policy.mode,
+        "retention_days": policy.retention_days,
+        "detect_stream_role": "sub" if policy.detect_sub_stream else "main",
+        "record_stream_role": "main" if policy.record_main_stream else "sub",
+    }
 
 
 def _materialize_default_recording_policy(policy: RecordingPolicy, camera: Camera) -> None:
@@ -281,8 +312,8 @@ def _materialize_default_recording_policy(policy: RecordingPolicy, camera: Camer
     defaults = DEFAULT_FRIGATE_TARGETS[camera.slug]
     policy.mode = "events_only"
     policy.retention_days = defaults["retention_days"]
-    policy.record_main_stream = True
-    policy.detect_sub_stream = True
+    policy.record_main_stream = defaults.get("record_stream_role", "main") == "main"
+    policy.detect_sub_stream = defaults.get("detect_stream_role", "sub") == "sub"
     policy.enabled = True
 
 
@@ -302,28 +333,69 @@ def _camera_entries(camera: Camera, policy: dict[str, Any], warnings: list[str])
     if policy["mode"] == "continuous_selected_hours":
         warnings.append(f"{camera.slug}: continuous_selected_hours schedule is deferred; rendering event-based retention only")
     if camera.sub_stream_path or camera.main_stream_path:
+        detect_stream = _select_stream_name(
+            camera.slug,
+            main_path=camera.main_stream_path,
+            sub_path=camera.sub_stream_path,
+            preferred_role=str(policy.get("detect_stream_role", "sub")),
+        )
+        record_stream = _select_stream_name(
+            camera.slug,
+            main_path=camera.main_stream_path,
+            sub_path=camera.sub_stream_path,
+            preferred_role=str(policy.get("record_stream_role", "main")),
+        )
         entries.append(
             _entry(
                 name=camera.slug,
                 camera=camera,
-                detect_stream=f"{camera.slug}_{'sub' if camera.sub_stream_path else 'main'}",
-                record_stream=f"{camera.slug}_{'main' if camera.main_stream_path else 'sub'}",
+                detect_stream=detect_stream or f"{camera.slug}_{'sub' if camera.sub_stream_path else 'main'}",
+                record_stream=record_stream or f"{camera.slug}_{'main' if camera.main_stream_path else 'sub'}",
                 policy=policy,
             )
         )
     if camera.secondary_sub_stream_path or camera.secondary_main_stream_path:
+        lens2_name = f"{camera.slug}_lens2"
+        detect_stream = _select_stream_name(
+            lens2_name,
+            main_path=camera.secondary_main_stream_path,
+            sub_path=camera.secondary_sub_stream_path,
+            preferred_role=str(policy.get("detect_stream_role", "sub")),
+        )
+        record_stream = _select_stream_name(
+            lens2_name,
+            main_path=camera.secondary_main_stream_path,
+            sub_path=camera.secondary_sub_stream_path,
+            preferred_role=str(policy.get("record_stream_role", "main")),
+        )
         entries.append(
             _entry(
-                name=f"{camera.slug}_lens2",
+                name=lens2_name,
                 camera=camera,
-                detect_stream=f"{camera.slug}_lens2_{'sub' if camera.secondary_sub_stream_path else 'main'}",
-                record_stream=f"{camera.slug}_lens2_{'main' if camera.secondary_main_stream_path else 'sub'}",
+                detect_stream=detect_stream or f"{lens2_name}_{'sub' if camera.secondary_sub_stream_path else 'main'}",
+                record_stream=record_stream or f"{lens2_name}_{'main' if camera.secondary_main_stream_path else 'sub'}",
                 policy=policy,
             )
         )
     if not entries:
         warnings.append(f"{camera.slug}: skipped because no usable stream paths are present")
     return entries
+
+
+def _select_stream_name(
+    prefix: str,
+    *,
+    main_path: str | None,
+    sub_path: str | None,
+    preferred_role: str,
+) -> str | None:
+    roles = [preferred_role, "sub" if preferred_role == "main" else "main"]
+    for role in roles:
+        if role == "sub" and sub_path:
+            return f"{prefix}_sub"
+        if role == "main" and main_path:
+            return f"{prefix}_main"
+    return None
 
 
 def _entry(name: str, camera: Camera, detect_stream: str, record_stream: str, policy: dict[str, Any]) -> FrigateCameraEntry:

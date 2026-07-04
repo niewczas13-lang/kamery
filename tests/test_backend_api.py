@@ -390,7 +390,7 @@ class BackendApiTests(unittest.TestCase):
         self.assertEqual(valid.json()["mode"], "events_only")
         self.assertEqual(valid.json()["retention_days"], 2)
 
-    def test_recording_policy_endpoint_keeps_c8c60_disabled_by_default(self) -> None:
+    def test_recording_policy_endpoint_enables_c8c60_on_substream_by_default(self) -> None:
         location_id = self._create_location()
         camera_id = self._create_camera(location_id, "lukow_c8c_60", "10.20.1.60", "CS-C8c")
 
@@ -398,9 +398,11 @@ class BackendApiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual(payload["mode"], "disabled")
-        self.assertEqual(payload["retention_days"], 7)
-        self.assertFalse(payload["enabled"])
+        self.assertEqual(payload["mode"], "events_only")
+        self.assertEqual(payload["retention_days"], 1)
+        self.assertTrue(payload["enabled"])
+        self.assertFalse(payload["record_main_stream"])
+        self.assertTrue(payload["detect_sub_stream"])
 
     def _create_location(self) -> int:
         response = self.client.post(

@@ -72,6 +72,6 @@ TEST_STABILITY_LUKOW.bat -DurationSeconds 300
 
 Nie wklejaj raw logow go2rtc. Uzywaj `scripts\go2rtc_logs_sanitized.ps1`.
 
-## Wazne dla C8C 60
+## Wazne dla C8C
 
-C8C 60 jest wyjeta z domyslnego smoke walla i domyslnego Frigate/NVR. Direct RTSP pokazal, ze kamera/link potrafi zrywac stream bez udzialu panelu. Otwieraj ja recznie do testow, dopoki lokalny link w Lukowie nie bedzie stabilny.
+C8C 60 i C8C 102 sa wlaczone do Frigate/NVR ostroznie: detekcja i nagrania ida po SUB, bez obciazania MAIN. Jezeli po aktualizacji Frigate nadal pokazuje 3 pozycje, uruchom `START_PANEL_LUKOW.bat` ponownie, zeby przegenerowal `runtime\config\frigate\config.yml`.
