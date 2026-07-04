@@ -12,6 +12,44 @@ $ErrorActionPreference = "Stop"
 $Root = Get-LukowProjectRoot
 Set-Location $Root
 Initialize-LukowEnvironment -Root $Root
+$PidDir = Join-Path $Root "runtime\pids"
+$PanelLogDir = Join-Path $Root "runtime\logs\panel"
+New-Item -ItemType Directory -Force -Path $PidDir, $PanelLogDir | Out-Null
+
+function Start-LukowHiddenProcess {
+    param(
+        [string]$Name,
+        [string]$PidFileName,
+        [string]$ScriptPath,
+        [string]$WorkingDirectory
+    )
+    $stdoutPath = Join-Path $PanelLogDir "$Name.out.log"
+    $stderrPath = Join-Path $PanelLogDir "$Name.err.log"
+    $pidPath = Join-Path $PidDir $PidFileName
+    if (Test-Path -LiteralPath $stdoutPath) {
+        Remove-Item -LiteralPath $stdoutPath -Force
+    }
+    if (Test-Path -LiteralPath $stderrPath) {
+        Remove-Item -LiteralPath $stderrPath -Force
+    }
+    $process = Start-Process powershell -WorkingDirectory $WorkingDirectory -WindowStyle Hidden -PassThru `
+        -RedirectStandardOutput $stdoutPath `
+        -RedirectStandardError $stderrPath `
+        -ArgumentList @(
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            $ScriptPath
+        )
+    Set-Content -LiteralPath $pidPath -Encoding ASCII -Value ([string]$process.Id)
+    Write-Host ("{0} uruchomiony w tle. PID={1}, logi: {2}" -f $Name, $process.Id, $stdoutPath)
+}
+
+$stopScript = Join-Path $PSScriptRoot "stop_lukow_panel.ps1"
+if (Test-Path -LiteralPath $stopScript) {
+    & $stopScript -SkipDocker -Quiet
+}
 
 if (-not (Test-Path -LiteralPath (Join-Path $Root ".venv\Scripts\python.exe"))) {
     Write-Host "Brak .venv. Uruchamiam setup bez promptu admina..."
@@ -52,23 +90,11 @@ if (-not $SkipDocker) {
 }
 
 $backendScript = Join-Path $Root "scripts\run_backend_lukow.ps1"
-Start-Process powershell -WorkingDirectory $Root -ArgumentList @(
-    "-NoExit",
-    "-ExecutionPolicy",
-    "Bypass",
-    "-File",
-    $backendScript
-)
+Start-LukowHiddenProcess -Name "backend" -PidFileName "backend.pid" -ScriptPath $backendScript -WorkingDirectory $Root
 
 if (-not $SkipFrontend) {
     $frontendScript = Join-Path $Root "scripts\run_frontend_lukow.ps1"
-    Start-Process powershell -WorkingDirectory $Root -ArgumentList @(
-        "-NoExit",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        $frontendScript
-    )
+    Start-LukowHiddenProcess -Name "frontend" -PidFileName "frontend.pid" -ScriptPath $frontendScript -WorkingDirectory $Root
 }
 
 if ($OpenBrowser) {

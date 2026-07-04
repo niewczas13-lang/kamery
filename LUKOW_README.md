@@ -13,6 +13,9 @@
 4. Kliknij `START_PANEL_LUKOW.bat`.
    - Domyslnie startuje tylko panel + go2rtc, bez ciezkiego obrazu Frigate/NVR.
    - NVR/nagrania uruchamiaj osobno przez `START_NVR_LUKOW.bat`.
+   - Backend i frontend startuja w tle, wiec okno startowe zamknie sie samo.
+   - Stopowanie panelu: `STOP_PANEL_LUKOW.bat`.
+   - Logi panelu: `runtime\logs\panel\backend.out.log` i `runtime\logs\panel\frontend.out.log`.
 
 Adresy lokalne:
 
