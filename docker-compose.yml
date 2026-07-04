@@ -1,0 +1,26 @@
+services:
+  go2rtc:
+    image: alexxit/go2rtc:latest
+    container_name: ezviz-panel-go2rtc
+    restart: unless-stopped
+    command: ["go2rtc", "-config", "/config/go2rtc.yaml"]
+    ports:
+      - "127.0.0.1:1984:1984"
+      - "127.0.0.1:8554:8554"
+    volumes:
+      - ./runtime/config/go2rtc/go2rtc.yaml:/config/go2rtc.yaml:ro
+      - ./runtime/logs/go2rtc:/logs
+  frigate:
+    image: ghcr.io/blakeblackshear/frigate:stable
+    container_name: ezviz-panel-frigate
+    restart: unless-stopped
+    stop_grace_period: 30s
+    shm_size: "512mb"
+    depends_on:
+      - go2rtc
+    ports:
+      - "127.0.0.1:5000:5000"
+    volumes:
+      - ./runtime/config/frigate:/config
+      - ./runtime/media/frigate:/media/frigate
+      - ./runtime/cache/frigate:/tmp/cache

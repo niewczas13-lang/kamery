@@ -1,0 +1,22 @@
+api:
+  listen: ":1984"
+rtsp:
+  listen: ":8554"
+streams:
+  lukow_h9c_98_main:
+    - rtsp://admin:${CAMERA98_PASSWORD}@192.168.80.98:554/Streaming/Channels/101
+  lukow_h9c_98_sub:
+    - rtsp://admin:${CAMERA98_PASSWORD}@192.168.80.98:554/Streaming/Channels/102
+  lukow_h9c_98_lens2_main:
+    - rtsp://admin:${CAMERA98_PASSWORD}@192.168.80.98:554/Streaming/Channels/201
+  lukow_h9c_98_lens2_sub:
+    - rtsp://admin:${CAMERA98_PASSWORD}@192.168.80.98:554/Streaming/Channels/202
+  lukow_h8_101_main:
+    - rtsp://admin:${CAMERA101_PASSWORD}@192.168.80.101:554/Streaming/Channels/101
+  lukow_h8_101_sub:
+    - rtsp://admin:${CAMERA101_PASSWORD}@192.168.80.101:554/Streaming/Channels/102
+  lukow_c8w_97_sub:
+    - rtsp://admin:${CAMERA97_PASSWORD}@192.168.80.97:554/Streaming/Channels/102
+  # Optional single-stream fallback only when ENABLE_EXPERIMENTAL_TRANSCODE=true.
+  # lukow_h9c_98_sub_h264:
+  #   - ffmpeg:lukow_h9c_98_sub#video=h264#audio=copy

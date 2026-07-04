@@ -1,0 +1,40 @@
+locations:
+  - id: lukow
+    name: "Lukow"
+    network_cidr: "192.168.80.0/24"
+
+cameras:
+  - id: "lukow_h9c_98"
+    name: "Lukow / H9C 98"
+    location_id: "lukow"
+    model: "CS-H9c-R100-8G55WKFL"
+    host: "192.168.80.98"
+    rtsp_username: "admin"
+    rtsp_password_secret_ref: "CAMERA98_PASSWORD"
+    onvif_username: "admin"
+    onvif_password_secret_ref: "CAMERA98_PASSWORD"
+    enabled: true
+    notes: "Dual-lens; SUB streams are default for grid/smoke."
+
+  - id: "lukow_c8w_97"
+    name: "Lukow / C8W 97"
+    location_id: "lukow"
+    model: "CS-C8W"
+    host: "192.168.80.97"
+    rtsp_username: "admin"
+    rtsp_password_secret_ref: "CAMERA97_PASSWORD"
+    onvif_username: "admin"
+    onvif_password_secret_ref: "CAMERA97_PASSWORD"
+    enabled: true
+
+  - id: "lukow_c8c_60"
+    name: "Lukow / C8C 60"
+    location_id: "lukow"
+    model: "CS-C8c-R100-1J5WKFL"
+    host: "192.168.80.60"
+    rtsp_username: "admin"
+    rtsp_password_secret_ref: "CAMERA60_PASSWORD"
+    onvif_username: "admin"
+    onvif_password_secret_ref: "CAMERA60_PASSWORD"
+    enabled: true
+    notes: "Excluded from default smoke/NVR until local RTSP is stable."
