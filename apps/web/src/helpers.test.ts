@@ -544,12 +544,16 @@ describe("stream stability helpers", () => {
     expect(parsed.searchParams.get("muted")).toBe("1");
   });
 
-  it("uses MJPEG-only playback for H9C lens2 and manual unstable camera tiles", () => {
-    expect(liveTilePlaybackMode({ camera_slug: "lukow_h9c_98", lens: "lens2" })).toBe("mjpeg");
-    expect(liveTilePlaybackMode({ camera_slug: "lukow_c8c_60", lens: "single", camera: { reliability_status: "degraded" } })).toBe(
-      "mjpeg"
-    );
-    expect(liveTilePlaybackMode({ camera_slug: "lukow_c8w_97", lens: "single" })).toBe("mse,mjpeg");
+  it("never forces MJPEG-only playback for HEVC/H265 live tiles", () => {
+    expect(liveTilePlaybackMode({ camera_slug: "lukow_h9c_98", lens: "lens2" }, { video_codec: "H265" })).toBe("mse");
+    expect(
+      liveTilePlaybackMode(
+        { camera_slug: "lukow_c8c_60", lens: "single", camera: { reliability_status: "degraded" } },
+        { video_codec: "HEVC" }
+      )
+    ).toBe("mse");
+    expect(liveTilePlaybackMode({ camera_slug: "lukow_c8c_60", lens: "single" }, { video_codec: "H264" })).toBe("mjpeg");
+    expect(liveTilePlaybackMode({ camera_slug: "lukow_c8w_97", lens: "single" }, { video_codec: "H265" })).toBe("mse");
 
     const identity = buildLiveTilePlayerIdentity({
       baseUrl: "http://127.0.0.1:1984",
@@ -557,10 +561,10 @@ describe("stream stability helpers", () => {
       streamName: "lukow_h9c_98_lens2_sub",
       audio: "off",
       reloadToken: 0,
-      mode: liveTilePlaybackMode({ camera_slug: "lukow_h9c_98", lens: "lens2" })
+      mode: liveTilePlaybackMode({ camera_slug: "lukow_h9c_98", lens: "lens2" }, { video_codec: "H265" })
     });
 
-    expect(new URL(identity.src).searchParams.get("mode")).toBe("mjpeg");
+    expect(new URL(identity.src).searchParams.get("mode")).toBe("mse");
   });
 
   it("marks paused live tiles so hover controls cannot block manual loading", () => {

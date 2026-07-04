@@ -179,7 +179,7 @@ const LiveTile = memo(function LiveTile({
     hasAudio: Boolean(stream?.has_audio || tile.camera.has_audio),
     requestedAudio: false
   });
-  const playbackMode = liveTilePlaybackMode(tile);
+  const playbackMode = liveTilePlaybackMode(tile, stream);
   const playerIdentity = useMemo(
     () =>
       buildLiveTilePlayerIdentity({

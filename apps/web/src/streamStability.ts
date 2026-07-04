@@ -51,7 +51,11 @@ export function liveTilePlaybackMode(tile: {
   camera_slug?: string | null;
   lens?: string | null;
   camera?: { slug?: string | null; reliability_status?: string | null } | null;
-}): Go2RtcPlaybackMode {
+}, stream?: { video_codec?: string | null } | null): Go2RtcPlaybackMode {
+  const codec = String(stream?.video_codec || "").toLowerCase();
+  if (codec.includes("h265") || codec.includes("h.265") || codec.includes("hevc")) {
+    return "mse";
+  }
   const slug = String(tile.camera_slug || tile.camera?.slug || "").toLowerCase();
   const lens = String(tile.lens || "").toLowerCase();
   const reliability = String(tile.camera?.reliability_status || "").toLowerCase();
