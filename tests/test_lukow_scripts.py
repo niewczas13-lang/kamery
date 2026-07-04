@@ -43,6 +43,15 @@ class LukowScriptTests(unittest.TestCase):
                 self.assertIn("start_lukow_panel.ps1", bat)
                 self.assertNotIn("pause", bat.lower())
 
+    def test_panel_start_keeps_frigate_detection_enabled_by_default(self) -> None:
+        panel_bat = (ROOT / "START_PANEL_LUKOW.bat").read_text(encoding="utf-8")
+        start_script = (ROOT / "scripts" / "start_lukow_panel.ps1").read_text(encoding="utf-8")
+
+        self.assertNotIn("-SkipFrigate", panel_bat)
+        self.assertIn("frigate-render-runtime", start_script)
+        self.assertIn("go2rtc frigate", start_script)
+        self.assertNotIn("Zatrzymuje Frigate/NVR dla stabilnego live view", start_script)
+
     def test_lukow_powershell_scripts_parse(self) -> None:
         command = (
             "$files=@('.\\scripts\\start_lukow_panel.ps1','.\\scripts\\stop_lukow_panel.ps1');"

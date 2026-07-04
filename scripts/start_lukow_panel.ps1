@@ -68,21 +68,19 @@ if (Test-LukowSecretTemplate -Root $Root) {
     $go2rtcReady = Test-Path -LiteralPath (Join-Path $Root "runtime\config\go2rtc\go2rtc.yaml")
 }
 
-if ($WithFrigate -and -not $SkipFrigate) {
+if (-not $SkipFrigate) {
     & $Python -m ezviz_panel.backend frigate-render-runtime
 }
 
 if (-not $SkipDocker) {
     Assert-LukowCommand -Name "docker" -InstallHint "Zainstaluj i uruchom Docker Desktop."
     if ($go2rtcReady) {
-        if ($WithFrigate -and -not $SkipFrigate) {
+        if (-not $SkipFrigate) {
             docker compose up -d --force-recreate go2rtc frigate
         } else {
             docker compose up -d --force-recreate go2rtc
-            if (-not $SkipFrigate) {
-                Write-Host "Zatrzymuje Frigate/NVR dla stabilnego live view..."
-                docker compose stop frigate
-            }
+            Write-Host "Frigate/NVR pominiety na jawne zyczenie (-SkipFrigate)."
+            docker compose stop frigate
         }
     } else {
         Write-Host "Pominieto docker compose: brak gotowego runtime/config/go2rtc/go2rtc.yaml."
@@ -107,8 +105,8 @@ Write-Host "Panel startuje."
 Write-Host "Frontend: http://127.0.0.1:5173"
 Write-Host "Backend:  http://127.0.0.1:8000"
 Write-Host "go2rtc:   http://127.0.0.1:1984"
-if ($WithFrigate -and -not $SkipFrigate) {
+if (-not $SkipFrigate) {
     Write-Host "Frigate:  http://127.0.0.1:5000"
 } else {
-    Write-Host "Frigate/NVR pominiety. Start NVR: START_NVR_LUKOW.bat"
+    Write-Host "Frigate/NVR pominiety. Start pelny: START_PANEL_LUKOW.bat albo START_NVR_LUKOW.bat"
 }
