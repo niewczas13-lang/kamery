@@ -118,7 +118,7 @@ export function LiveWallConsole({
                 requiresManualLoad: tileRequiresManualLoad(tile)
               });
               return (
-                <LiveTile
+                <RawLiveTile
                   key={tile.tile_id}
                   tile={tile}
                   locationName={locationMap.get(tile.camera.location_id) || "Lokalizacja nieznana"}
@@ -145,6 +145,62 @@ export function LiveWallConsole({
     </section>
   );
 }
+
+const RawLiveTile = memo(function RawLiveTile({
+  tile,
+  displayName,
+  locationName,
+  profile,
+  loadState,
+  onManualLoad,
+  onFocus
+}: {
+  tile: OperatorTile;
+  displayName: string;
+  locationName: string;
+  profile: PreviewProfile;
+  loadState: ReturnType<typeof tilePreviewLoadState>;
+  onManualLoad: () => void;
+  onFocus: () => void;
+}) {
+  const stream = selectTileStream(tile, profile, "grid");
+  const playbackMode = liveTilePlaybackMode(tile, stream);
+  const playerIdentity = useMemo(
+    () =>
+      buildLiveTilePlayerIdentity({
+        baseUrl: GO2RTC_PUBLIC_URL,
+        tileId: tile.tile_id,
+        streamName: stream?.stream_name || null,
+        audio: operatorWallDefaults.audio,
+        mode: playbackMode,
+        reloadToken: 0
+      }),
+    [playbackMode, stream?.stream_name, tile.tile_id]
+  );
+  const shouldRenderPlayer = Boolean(stream && loadState.active);
+  const pausedReason = !stream ? "Brak obrazu" : loadState.requiresManualLoad && !loadState.active ? "Kliknij, aby zaladowac" : "Podglad wstrzymany";
+
+  return (
+    <article className={liveTileClassName({ hasStream: Boolean(stream), paused: loadState.paused, rawMonitorMode: operatorWallDefaults.rawMonitorMode })}>
+      <div className="camera-preview live-tile-preview raw-live-preview">
+        {shouldRenderPlayer ? <iframe title={stream?.stream_name} src={playerIdentity.src} allow="fullscreen" loading="eager" /> : null}
+        {!shouldRenderPlayer ? (
+          <div className="preview-placeholder paused raw-placeholder" onClick={stream ? onManualLoad : undefined}>
+            <strong>{displayName}</strong>
+            <span>{pausedReason}</span>
+            <button className="ghost-button" onClick={stream ? onManualLoad : onFocus}>
+              {stream ? "Kliknij, aby zaladowac" : "Ponow"}
+            </button>
+          </div>
+        ) : null}
+        <div className="raw-tile-caption">
+          <strong>{displayName}</strong>
+          <span>{locationName}</span>
+        </div>
+      </div>
+    </article>
+  );
+});
 
 const liveTileMountCounts = new Map<string, number>();
 

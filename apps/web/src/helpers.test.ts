@@ -24,6 +24,7 @@ import {
   ptzStatusMessage,
   sanitizePtzUiText
 } from "./ptz";
+import { refreshModeForView, refreshResourcesForMode } from "./refreshStrategy";
 import {
   buildGo2RtcPlayerUrl,
   isDefaultSmokeStream,
@@ -471,6 +472,7 @@ describe("stream stability helpers", () => {
     expect(operatorWallDefaults.statusFilter).toBe("all");
     expect(operatorWallDefaults.showEventDrawer).toBe(false);
     expect(operatorWallDefaults.audio).toBe("off");
+    expect(operatorWallDefaults.rawMonitorMode).toBe(true);
   });
 
   it("requires manual loading for unstable C8C tiles", () => {
@@ -571,6 +573,7 @@ describe("stream stability helpers", () => {
     expect(liveTileClassName({ hasStream: true, paused: true })).toContain("preview-paused");
     expect(liveTileClassName({ hasStream: true, paused: false })).not.toContain("preview-paused");
     expect(liveTileClassName({ hasStream: false, paused: true })).toContain("no-video");
+    expect(liveTileClassName({ hasStream: true, paused: false, rawMonitorMode: true })).toContain("raw-monitor-tile");
   });
 
   it("limits active grid previews and lets an over-limit tile load manually", () => {
@@ -614,6 +617,29 @@ describe("stream stability helpers", () => {
       label: "eksperymentalny",
       tone: "bad"
     });
+  });
+});
+
+describe("refresh strategy", () => {
+  it("uses lightweight polling for silent live wall refreshes", () => {
+    expect(refreshModeForView({ view: "live", silent: true })).toBe("live_light");
+    expect(refreshResourcesForMode("live_light")).toEqual([
+      "backendHealth",
+      "locations",
+      "cameras",
+      "streams",
+      "go2rtcHealth",
+      "recordingPolicies"
+    ]);
+    expect(refreshResourcesForMode("live_light")).not.toContain("frigateEvents");
+    expect(refreshResourcesForMode("live_light")).not.toContain("frigateRecordings");
+  });
+
+  it("keeps full refreshes for startup and non-live views", () => {
+    expect(refreshModeForView({ view: "live", silent: false })).toBe("full");
+    expect(refreshModeForView({ view: "events", silent: true })).toBe("full");
+    expect(refreshResourcesForMode("full")).toContain("frigateEvents");
+    expect(refreshResourcesForMode("full")).toContain("frigateRecordings");
   });
 });
 

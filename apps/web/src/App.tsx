@@ -40,6 +40,7 @@ import {
 } from "./operatorPreferences";
 import { defaultPtzDurationMs, ptzCommandAllowed, sanitizePtzUiText, type PtzUiState } from "./ptz";
 import { PtzJoystick } from "./PtzJoystick";
+import { refreshModeForView } from "./refreshStrategy";
 import {
   buildGo2RtcPlayerUrl,
   qualityLabel,
@@ -124,41 +125,59 @@ export default function App() {
     if (!token) {
       return;
     }
+    const refreshMode = refreshModeForView({ view, silent: options.silent });
     if (!options.silent) {
       setLoading(true);
       setError("");
     }
     try {
-      const [
-        nextBackendHealth,
-        nextLocations,
-        nextCameras,
-        nextStreams,
-        nextGo2rtcHealth,
-        nextFrigateHealth,
-        nextFrigateEvents,
-        nextFrigateRecordings,
-        nextRecordingPolicies
-      ] = await Promise.all([
-        getBackendHealth(),
-        listLocations(token),
-        listCameras(token),
-        listStreams(token),
-        getGo2RtcHealth(token),
-        getFrigateHealth(token),
-        listFrigateEvents(token),
-        listFrigateRecordings(token),
-        listRecordingPolicies(token)
-      ]);
-      setBackendHealth(nextBackendHealth);
-      setLocations(nextLocations);
-      setCameras(nextCameras);
-      setStreams(nextStreams);
-      setGo2rtcHealth(nextGo2rtcHealth);
-      setFrigateHealth(nextFrigateHealth);
-      setFrigateEvents(nextFrigateEvents);
-      setFrigateRecordings(nextFrigateRecordings);
-      setRecordingPolicies(nextRecordingPolicies);
+      if (refreshMode === "live_light") {
+        const [nextBackendHealth, nextLocations, nextCameras, nextStreams, nextGo2rtcHealth, nextRecordingPolicies] = await Promise.all([
+          getBackendHealth(),
+          listLocations(token),
+          listCameras(token),
+          listStreams(token),
+          getGo2RtcHealth(token),
+          listRecordingPolicies(token)
+        ]);
+        setBackendHealth(nextBackendHealth);
+        setLocations(nextLocations);
+        setCameras(nextCameras);
+        setStreams(nextStreams);
+        setGo2rtcHealth(nextGo2rtcHealth);
+        setRecordingPolicies(nextRecordingPolicies);
+      } else {
+        const [
+          nextBackendHealth,
+          nextLocations,
+          nextCameras,
+          nextStreams,
+          nextGo2rtcHealth,
+          nextFrigateHealth,
+          nextFrigateEvents,
+          nextFrigateRecordings,
+          nextRecordingPolicies
+        ] = await Promise.all([
+          getBackendHealth(),
+          listLocations(token),
+          listCameras(token),
+          listStreams(token),
+          getGo2RtcHealth(token),
+          getFrigateHealth(token),
+          listFrigateEvents(token),
+          listFrigateRecordings(token),
+          listRecordingPolicies(token)
+        ]);
+        setBackendHealth(nextBackendHealth);
+        setLocations(nextLocations);
+        setCameras(nextCameras);
+        setStreams(nextStreams);
+        setGo2rtcHealth(nextGo2rtcHealth);
+        setFrigateHealth(nextFrigateHealth);
+        setFrigateEvents(nextFrigateEvents);
+        setFrigateRecordings(nextFrigateRecordings);
+        setRecordingPolicies(nextRecordingPolicies);
+      }
     } catch (requestError) {
       setError(apiErrorMessage(requestError));
     } finally {

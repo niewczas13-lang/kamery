@@ -13,7 +13,8 @@ export const operatorWallDefaults = {
   showNoVideoInGrid: false,
   statusFilter: "all",
   showEventDrawer: false,
-  audio: "off"
+  audio: "off",
+  rawMonitorMode: true
 } as const;
 
 export const activePreviewLimitOptions: { value: ActivePreviewLimit; label: string }[] = [
@@ -71,8 +72,14 @@ export function liveTilePlaybackMode(tile: {
   return stableWallPlaybackMode;
 }
 
-export function liveTileClassName(options: { hasStream: boolean; paused: boolean }): string {
-  return ["camera-card", "live-tile", options.hasStream ? "" : "no-video", options.paused ? "preview-paused" : ""]
+export function liveTileClassName(options: { hasStream: boolean; paused: boolean; rawMonitorMode?: boolean }): string {
+  return [
+    "camera-card",
+    "live-tile",
+    options.rawMonitorMode ? "raw-monitor-tile" : "",
+    options.hasStream ? "" : "no-video",
+    options.paused ? "preview-paused" : ""
+  ]
     .filter(Boolean)
     .join(" ");
 }

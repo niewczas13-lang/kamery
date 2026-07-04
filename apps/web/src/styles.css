@@ -618,6 +618,50 @@ th {
   z-index: 1;
 }
 
+.raw-monitor-tile {
+  background: #050705;
+}
+
+.raw-live-preview {
+  background: #050705;
+}
+
+.raw-live-preview iframe {
+  display: block;
+}
+
+.raw-placeholder {
+  background: #0e110d;
+}
+
+.raw-tile-caption {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 9px;
+  z-index: 2;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 10px;
+  color: #eef3ed;
+  font-size: 12px;
+  pointer-events: none;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+}
+
+.raw-tile-caption strong,
+.raw-tile-caption span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.raw-tile-caption span {
+  color: #c6d1bf;
+}
+
 .stream-skeleton {
   position: absolute;
   inset: 0;
