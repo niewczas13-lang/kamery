@@ -94,6 +94,30 @@ function Add-StabilityLog {
     Add-Content -LiteralPath $Path -Encoding UTF8 -Value (Sanitize-StabilityText $Value)
 }
 
+function Invoke-StabilityDockerCompose {
+    param(
+        [string[]]$Arguments,
+        [switch]$IgnoreFailure
+    )
+    $oldErrorPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $output = & docker compose @Arguments 2>&1
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $oldErrorPreference
+    }
+    foreach ($line in @($output)) {
+        if ($line) {
+            Write-StabilityStatus ("docker compose {0}: {1}" -f ($Arguments -join " "), (Sanitize-StabilityText ([string]$line)))
+        }
+    }
+    if ($exitCode -ne 0 -and -not $IgnoreFailure) {
+        throw ("docker compose {0} failed with exit code {1}" -f ($Arguments -join " "), $exitCode)
+    }
+    return $output
+}
+
 function Last-RegexValue {
     param(
         [string]$Text,
@@ -514,8 +538,8 @@ if (($renderOutput | Out-String) -match "Streams:\s*0") {
 }
 
 Write-StabilityStatus "Startuje go2rtc i wylaczam Frigate do bazowego testu."
-docker compose up -d --force-recreate go2rtc | Out-Null
-docker compose stop frigate 2>$null | Out-Null
+Invoke-StabilityDockerCompose -Arguments @("up", "-d", "--force-recreate", "go2rtc") | Out-Null
+Invoke-StabilityDockerCompose -Arguments @("stop", "frigate") -IgnoreFailure | Out-Null
 
 $deadline = (Get-Date).AddSeconds(45)
 $ready = $false
@@ -586,10 +610,10 @@ if ($SkipDirect) {
 $frigateComparison = [ordered]@{ enabled = [bool]$WithFrigate }
 if ($WithFrigate) {
     Write-StabilityStatus "Frigate comparison: startuje Frigate i uruchamiam rownolegly test go2rtc."
-    docker compose up -d frigate | Out-Null
+    Invoke-StabilityDockerCompose -Arguments @("up", "-d", "frigate") | Out-Null
     Start-Sleep -Seconds 20
     $withFrigate = @(Invoke-ParallelGo2RtcProbe -Targets $Targets)
-    docker compose stop frigate 2>$null | Out-Null
+    Invoke-StabilityDockerCompose -Arguments @("stop", "frigate") -IgnoreFailure | Out-Null
     $frigateComparison = [ordered]@{
         enabled = $true
         with_frigate = $withFrigate
