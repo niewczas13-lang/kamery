@@ -341,6 +341,29 @@ class BackendApiTests(unittest.TestCase):
         self.assertNotIn("secret-h9c", str(payload))
         self.assertNotIn("rtsp://admin:", str(payload))
 
+    def test_stream_inventory_includes_unstable_experimental_streams_for_manual_wall_tiles(self) -> None:
+        with Session(self.engine) as session:
+            import_probe_files(
+                session,
+                [VPN_FULL_RESULT, VPN_RECHECK_RESULT],
+                create_missing=True,
+                apply=True,
+                prefer_best=True,
+            )
+
+        response = self.client.get("/api/v1/streams", headers=self.headers)
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        names = [item["stream_name"] for item in payload]
+        self.assertIn("demo_c8c_102_main_experimental", names)
+        experimental = next(item for item in payload if item["stream_name"] == "demo_c8c_102_main_experimental")
+        self.assertEqual(experimental["camera_name"], "Demo C8C 102")
+        self.assertEqual(experimental["stream_role"], "main_experimental")
+        self.assertFalse(experimental["is_recommended_for_grid"])
+        self.assertNotIn("secret-h9c", str(payload))
+        self.assertNotIn("rtsp://admin:", str(payload))
+
     def test_recording_policy_patch_validates_mode_and_retention(self) -> None:
         location_id = self._create_location()
         camera_id = self._create_camera(location_id, "lukow_c8c_60", "10.20.1.60", "CS-C8c")

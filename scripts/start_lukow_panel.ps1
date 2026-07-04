@@ -26,7 +26,7 @@ $go2rtcReady = $false
 if (Test-LukowSecretTemplate -Root $Root) {
     Write-Host "secrets.local.env ma placeholdery. Uzupelnij verification codes i uruchom START ponownie."
 } else {
-    & $Python -m ezviz_panel.backend go2rtc-render-runtime
+    & $Python -m ezviz_panel.backend go2rtc-render-runtime --include-unstable-streams --include-diagnostic-streams
     $go2rtcReady = Test-Path -LiteralPath (Join-Path $Root "runtime\config\go2rtc\go2rtc.yaml")
 }
 

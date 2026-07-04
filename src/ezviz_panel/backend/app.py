@@ -371,6 +371,7 @@ def create_app(
             for stream in list_go2rtc_streams(
                 session,
                 enable_experimental_transcode=app_settings.enable_experimental_transcode,
+                include_unstable_streams=True,
             )
         ]
 
@@ -384,6 +385,7 @@ def create_app(
             session,
             stream_name,
             enable_experimental_transcode=app_settings.enable_experimental_transcode,
+            include_unstable_streams=True,
         )
         if stream is None:
             raise HTTPException(status_code=404, detail="Stream not found")
@@ -394,6 +396,7 @@ def create_app(
         yaml_text, warnings = render_go2rtc_preview(
             session,
             enable_experimental_transcode=app_settings.enable_experimental_transcode,
+            include_unstable_streams=True,
         )
         return Go2RtcPreviewResponse(yaml=yaml_text, warnings=warnings)
 
@@ -402,6 +405,7 @@ def create_app(
         yaml_text, warnings = render_go2rtc_preview(
             session,
             enable_experimental_transcode=app_settings.enable_experimental_transcode,
+            include_unstable_streams=True,
         )
         return Go2RtcPreviewResponse(yaml=yaml_text, warnings=warnings)
 
@@ -416,6 +420,7 @@ def create_app(
                 secrets_env_file=app_settings.secrets_env_file,
                 output_path=app_settings.go2rtc_config_path,
                 enable_experimental_transcode=app_settings.enable_experimental_transcode,
+                include_unstable_streams=True,
             )
         except Go2RtcConfigError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -435,6 +440,7 @@ def create_app(
         streams = list_go2rtc_streams(
             session,
             enable_experimental_transcode=app_settings.enable_experimental_transcode,
+            include_unstable_streams=True,
         )
         cameras = session.query(Camera).order_by(Camera.slug).all()
         go2rtc_payload = fetch_go2rtc_health(app_settings.go2rtc_url)
@@ -590,8 +596,9 @@ def create_app(
         streams = list_go2rtc_streams(
             session,
             enable_experimental_transcode=app_settings.enable_experimental_transcode,
+            include_unstable_streams=True,
         )
-        skipped = list_skipped_cameras(session)
+        skipped = list_skipped_cameras(session, include_unstable_streams=True)
         return HTMLResponse(_render_debug_streams_html(streams, skipped, app_settings.go2rtc_url))
 
     init_db(db_engine)

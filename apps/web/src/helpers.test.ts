@@ -38,6 +38,7 @@ import {
   buildLiveTilePlayerIdentity,
   effectivePreviewProfile,
   operatorWallDefaults,
+  tileRequiresManualLoad,
   streamStabilityStatus,
   tilePreviewLoadState
 } from "./streamStability";
@@ -314,7 +315,7 @@ describe("operator live wall tiles", () => {
     ]);
   });
 
-  it("keeps C8C 102 experimental tiles out of the default wall but available in unstable diagnostics", () => {
+  it("keeps C8C 102 experimental tiles visible in the default wall with unstable badges", () => {
     const experimentalCamera = camera(102, "lukow_c8c_102", "C8C 102", { reliability_status: "unstable" });
     const experimentalStream = streamFor(102, "lukow_c8c_102_main_experimental", "main_experimental", "2880x1620");
 
@@ -329,7 +330,8 @@ describe("operator live wall tiles", () => {
       statusFilter: "unstable"
     });
 
-    expect(defaultResult.tiles.map((tile) => tile.camera_slug)).not.toContain("lukow_c8c_102");
+    const defaultTile = defaultResult.tiles.find((tile) => tile.camera_slug === "lukow_c8c_102");
+    expect(defaultTile?.badges).toContain("NIESTABILNA");
     expect(unstableResult.tiles.map((tile) => tile.camera_slug)).toContain("lukow_c8c_102");
   });
 });
@@ -467,6 +469,32 @@ describe("stream stability helpers", () => {
     expect(operatorWallDefaults.statusFilter).toBe("all");
     expect(operatorWallDefaults.showEventDrawer).toBe(false);
     expect(operatorWallDefaults.audio).toBe("off");
+  });
+
+  it("requires manual loading for unstable C8C tiles", () => {
+    const c8c60 = buildOperatorTiles(
+      [camera(60, "lukow_c8c_60", "C8C 60", { reliability_status: "degraded" })],
+      [streamFor(60, "lukow_c8c_60_sub", "sub", "768x432")],
+      new Map(),
+      { separateLenses: true, showNoVideoInGrid: false }
+    ).tiles[0];
+    const c8c102 = buildOperatorTiles(
+      [camera(102, "lukow_c8c_102", "C8C 102", { reliability_status: "unstable" })],
+      [streamFor(102, "lukow_c8c_102_main_experimental", "main_experimental", "2880x1620")],
+      new Map(),
+      { separateLenses: true, showNoVideoInGrid: false }
+    ).tiles[0];
+
+    expect(tileRequiresManualLoad(c8c60)).toBe(true);
+    expect(tileRequiresManualLoad(c8c102)).toBe(true);
+    expect(tilePreviewLoadState({ index: 0, limit: "6", manuallyLoaded: false, requiresManualLoad: true })).toMatchObject({
+      active: false,
+      paused: true
+    });
+    expect(tilePreviewLoadState({ index: 0, limit: "6", manuallyLoaded: true, requiresManualLoad: true })).toMatchObject({
+      active: true,
+      paused: false
+    });
   });
 
   it("keeps tile keys stable and changes player src only for stream, audio or retry token", () => {

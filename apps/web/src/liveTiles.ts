@@ -220,7 +220,7 @@ function tileBadges(camera: Camera, stream: Stream | undefined, policy: Recordin
     camera.has_ptz ? "PTZ" : "",
     camera.has_audio || stream?.has_audio ? "AUDIO" : "",
     (stream?.video_codec || "").toLowerCase().includes("hevc") ? "HEVC" : "",
-    camera.reliability_status === "unstable" ? "NIESTABILNA" : ""
+    cameraNeedsManualLoad(camera) ? "NIESTABILNA" : ""
   ].filter(Boolean);
 }
 
@@ -234,9 +234,6 @@ function noVideoCamera(camera: Camera, streams: Stream[]): NoVideoCamera {
 }
 
 function matchesStatusFilter(tile: OperatorTile, filter: TileStatusFilter): boolean {
-  if (isExperimentalCamera(tile.camera) && filter !== "unstable") {
-    return false;
-  }
   if (filter === "all") {
     return true;
   }
@@ -286,6 +283,7 @@ export function tileQualityText(tile: OperatorTile, stream: Stream | undefined):
   return `${qualityLabel(qualityRoleForStream(stream))} / ${stream.resolution || "-"} / ${stream.video_codec?.toUpperCase() || "-"}`;
 }
 
-function isExperimentalCamera(camera: Camera): boolean {
-  return camera.slug.toLowerCase().includes("c8c_102") || camera.reliability_status === "experimental";
+function cameraNeedsManualLoad(camera: Camera): boolean {
+  const slug = camera.slug.toLowerCase();
+  return camera.reliability_status === "unstable" || camera.reliability_status === "experimental" || slug.includes("c8c_60") || slug.includes("c8c_102");
 }

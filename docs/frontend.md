@@ -116,8 +116,8 @@ Press-and-hold remains deferred/experimental.
 
 - H8 101 can be absent when `CAMERA101_PASSWORD` is not available. That must not
   block the UI.
-- C8C 102 is unstable/experimental when present and is not part of default live
-  smoke.
+- C8C 60 and C8C 102 are visible when stream metadata exists, but they are
+  unstable/manual-load tiles and should not auto-start in the wall.
 - HEVC/H.265 warnings mean browser playback may need player support or a later
   transcode step.
 - Token storage is localStorage for this MVP only. Hardened session handling is a

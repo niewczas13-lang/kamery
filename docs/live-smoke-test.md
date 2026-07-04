@@ -113,8 +113,9 @@ Direct smoke URL:
 
 ## C8C 102
 
-`lukow_c8c_102` is unstable and skipped from the default runtime. Optional
-diagnostic flow:
+`lukow_c8c_102` is unstable. When it exists in the database and
+`CAMERA102_PASSWORD` is configured, the Lukow start scripts render it as an
+experimental manual-load live tile. Manual diagnostic flow:
 
 ```powershell
 .\.venv\Scripts\python.exe -m ezviz_panel.backend go2rtc-render-runtime --include-unstable-streams

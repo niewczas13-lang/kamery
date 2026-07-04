@@ -57,8 +57,9 @@ Do not commit `secrets.local.env`.
 - `lukow_c8c_60_main`
 - `lukow_c8c_60_sub`
 
-`lukow_c8c_102` is unstable after the current VPN probes and is skipped from the
-default runtime. Diagnostics should show it as unstable/experimental.
+`lukow_c8c_102` is unstable after the current VPN probes. When it exists in the
+database and `CAMERA102_PASSWORD` is configured, the Lukow start scripts render
+it as an experimental stream so the operator wall can show a manual-load tile.
 
 To include the unstable diagnostic stream for `.102`, render with:
 
@@ -67,13 +68,15 @@ To include the unstable diagnostic stream for `.102`, render with:
 ```
 
 That may add `lukow_c8c_102_main_experimental` when the best probe has
-`/ch1/main`. Do not use unstable streams for the default live grid.
+`/ch1/main`. The live wall shows it as unstable/manual-load; it should not be
+part of Frigate/NVR defaults.
 
 ### C8C 60 diagnostic `/ch1/sub`
 
-The current `lukow_c8c_60_sub` can be unstable through go2rtc. A safer candidate
-path exists as `/ch1/sub`, but the default alias is not changed until the 120 s
-TCP video-only test passes.
+The current Lukow seed sets `lukow_c8c_60_sub` to `/ch1/sub`. The stream can
+still be unstable through go2rtc, so the operator wall keeps it manual-load.
+The legacy `/Streaming/Channels/102` path can still be compared with the 120 s
+TCP video-only lab before changing any camera-specific override.
 
 Render a temporary diagnostic alias:
 

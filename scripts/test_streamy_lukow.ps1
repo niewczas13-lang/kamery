@@ -26,7 +26,7 @@ if (Test-LukowSecretTemplate -Root $Root) {
 }
 
 Write-Host "Renderuje runtime go2rtc..."
-$renderOutput = & $Python -m ezviz_panel.backend go2rtc-render-runtime 2>&1
+$renderOutput = & $Python -m ezviz_panel.backend go2rtc-render-runtime --include-unstable-streams --include-diagnostic-streams 2>&1
 $renderOutput | ForEach-Object { Write-Host $_ }
 if ($LASTEXITCODE -ne 0) {
     throw "Render go2rtc nie powiodl sie."

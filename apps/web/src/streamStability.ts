@@ -67,17 +67,29 @@ export function tilePreviewLoadState(options: {
   limit: ActivePreviewLimit;
   manuallyLoaded: boolean;
   ecoMode?: boolean;
-}): { active: boolean; paused: boolean; overActiveLimit: boolean; effectiveLimit: ActivePreviewLimit } {
+  requiresManualLoad?: boolean;
+}): { active: boolean; paused: boolean; overActiveLimit: boolean; effectiveLimit: ActivePreviewLimit; requiresManualLoad: boolean } {
   const effectiveLimit = effectiveActivePreviewLimit(options.limit, Boolean(options.ecoMode));
   const limitCount = activePreviewLimitCount(effectiveLimit);
   const overActiveLimit = options.index >= limitCount;
-  const active = !overActiveLimit || options.manuallyLoaded;
+  const requiresManualLoad = Boolean(options.requiresManualLoad);
+  const active = (!requiresManualLoad && !overActiveLimit) || options.manuallyLoaded;
   return {
     active,
     paused: !active,
     overActiveLimit,
-    effectiveLimit
+    effectiveLimit,
+    requiresManualLoad
   };
+}
+
+export function tileRequiresManualLoad(tile: {
+  camera_slug?: string | null;
+  camera?: { slug?: string | null; reliability_status?: string | null } | null;
+}): boolean {
+  const slug = String(tile.camera_slug || tile.camera?.slug || "").toLowerCase();
+  const reliability = String(tile.camera?.reliability_status || "").toLowerCase();
+  return reliability === "unstable" || reliability === "experimental" || slug.includes("c8c_60") || slug.includes("c8c_102");
 }
 
 export function streamStabilityStatus(options: {

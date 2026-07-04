@@ -281,8 +281,8 @@ http://127.0.0.1:5173
 - `lukow_h9c_98`: stable dual-lens camera, 4 default streams, HEVC, AAC audio, ONVIF/PTZ.
 - `lukow_h8_101`: stable camera, 2 default streams, HEVC, ONVIF/PTZ, no audio detected.
 - `lukow_c8w_97`: video works, 2 default streams when the best probe has 101/102, ONVIF/PTZ unavailable or unknown.
-- `lukow_c8c_60`: works for manual checks, ONVIF/PTZ, AAC audio; direct RTSP is unstable over longer runs, so it is excluded from default smoke wall and Frigate/NVR until the local link is stable.
-- `lukow_c8c_102`: experimental/unstable; keep it out of the default video wall until a stable SUB stream is confirmed.
+- `lukow_c8c_60`: works for manual checks, ONVIF/PTZ, AAC audio; it is visible in the live wall as a manual-load unstable tile, but remains excluded from Frigate/NVR until the local link is stable.
+- `lukow_c8c_102`: experimental/unstable; when imported with a configured secret it is visible in the live wall as a manual-load experimental tile.
 
 HEVC playback in browsers is not solved yet. Etap 3 must handle go2rtc playback
 and possible fallback/transcoding.
@@ -292,10 +292,10 @@ are the stable PTZ smoke targets. C8W 97 is not shown as real PTZ unless a later
 probe confirms it. C8C 102 remains experimental/unstable. H8 101 may be blocked
 locally until `CAMERA101_PASSWORD` is present.
 
-Frigate/NVR defaults include H9C lens1, H9C lens2, and C8W 97. C8C 60 is
-omitted until direct RTSP is stable in the Lukow LAN. H8 101 is omitted until
-`CAMERA101_PASSWORD` is available. C8C 102 stays experimental and should not be
-part of the default live wall or NVR target set in this stage.
+Frigate/NVR defaults include H9C lens1, H9C lens2, and C8W 97. C8C 60 and C8C
+102 can appear in the live wall, but they are manual-load unstable tiles and are
+omitted from NVR targets until direct RTSP is stable in the Lukow LAN. H8 101 is
+omitted until `CAMERA101_PASSWORD` is available.
 
 ## Etap 5C Operator Video Wall
 
@@ -309,6 +309,7 @@ camera from a logical preview window: H9C can appear as `Obiektyw 1` and
 - video wall playback uses the stable go2rtc mode and stays muted,
 - H9C lenses are shown as separate preview windows by default,
 - cameras without video stay out of the default grid,
+- unstable C8C tiles are visible but do not auto-load; click the tile to start them,
 - Frigate events are not overlaid on the live wall; use Events/Recordings/focus timeline,
 - Etap 6A public HTTPS/reverse proxy remains deferred.
 
@@ -342,28 +343,20 @@ global or focus-mode action to enable camera audio in the operator UI.
 once:
 
 - `Aktywne podglądy` defaults to `6` with options `2 / 4 / 6 / 9`.
-- Tiles outside the active limit render `Podgląd wstrzymany` and load only after
-  `Kliknij, aby załadować`.
+- Tiles outside the active limit and unstable C8C tiles render `Podgląd
+  wstrzymany` and load only after `Kliknij, aby załadować`.
 - Stream diagnostics are not shown in the operator wall. Use the diagnostics
   scripts and sanitized logs when debugging.
 - The wall uses stable `tile_id` React keys. Player `src` changes only when the
   stream name, audio policy, or retry token changes.
 
-C8C 60 has a diagnostic go2rtc alias for `/ch1/sub`, but the default
-`lukow_c8c_60_sub` is not changed until the TCP video-only 120 s test passes:
+C8C 60 uses `/ch1/sub` as the default SUB path in the Lukow seed. It still has
+to be treated as unstable/manual-load in the operator wall:
 
 ```powershell
-python -m ezviz_panel.backend go2rtc-render-runtime --include-diagnostic-streams
+python -m ezviz_panel.backend go2rtc-render-runtime --include-unstable-streams --include-diagnostic-streams
 docker compose restart go2rtc
 .\scripts\diagnose_streams.ps1 -DurationSeconds 120 -VideoOnly
-```
-
-If `lukow_c8c_60_sub_ch1` is stable, set it as the preferred SUB path:
-
-```powershell
-python -m ezviz_panel.backend stream-override --camera-slug lukow_c8c_60 --role sub --path /ch1/sub
-python -m ezviz_panel.backend go2rtc-render-runtime
-docker compose restart go2rtc
 ```
 
 To compare Frigate load impact:

@@ -64,7 +64,7 @@ if (Test-LukowSecretTemplate -Root $Root) {
     Write-Host "secrets.local.env ma placeholdery. Uzupelnij verification codes przed renderem go2rtc."
 } else {
     Write-Host "Renderuje go2rtc runtime..."
-    & $Python -m ezviz_panel.backend go2rtc-render-runtime
+    & $Python -m ezviz_panel.backend go2rtc-render-runtime --include-unstable-streams --include-diagnostic-streams
 }
 
 Write-Host "Renderuje Frigate runtime..."

@@ -37,6 +37,8 @@ class LukowSeedTests(unittest.TestCase):
         self.assertEqual(
             [stream.stream_name for stream in streams],
             [
+                "lukow_c8c_60_main",
+                "lukow_c8c_60_sub",
                 "lukow_c8w_97_sub",
                 "lukow_h9c_98_main",
                 "lukow_h9c_98_sub",
@@ -44,7 +46,9 @@ class LukowSeedTests(unittest.TestCase):
                 "lukow_h9c_98_lens2_sub",
             ],
         )
-        self.assertEqual(c8c.video_status, "unavailable")
+        self.assertEqual(c8c.video_status, "ok")
+        self.assertEqual(c8c.main_stream_path, "/Streaming/Channels/101")
+        self.assertEqual(c8c.sub_stream_path, "/ch1/sub")
 
     def test_seeded_runtime_requires_only_active_stream_secrets(self) -> None:
         with Session(self.engine) as session:
@@ -60,7 +64,7 @@ class LukowSeedTests(unittest.TestCase):
         error = str(raised.exception)
         self.assertIn("CAMERA98_PASSWORD", error)
         self.assertIn("CAMERA97_PASSWORD", error)
-        self.assertNotIn("CAMERA60_PASSWORD", error)
+        self.assertIn("CAMERA60_PASSWORD", error)
 
 
 if __name__ == "__main__":

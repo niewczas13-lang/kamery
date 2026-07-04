@@ -14,6 +14,7 @@ import {
   buildLiveTilePlayerIdentity,
   operatorWallDefaults,
   streamStabilityStatus,
+  tileRequiresManualLoad,
   tilePreviewLoadState,
   type ActivePreviewLimit
 } from "./streamStability";
@@ -107,10 +108,12 @@ export function LiveWallConsole({
         <div className="live-wall-main">
           <div className={`camera-grid video-wall layout-${layout === "auto" || layout === "custom" ? "4" : layout}`}>
             {visibleTiles.map((tile, index) => {
+              const manuallyLoaded = manualTileLoads.has(tile.tile_id);
               const loadState = tilePreviewLoadState({
                 index,
                 limit: activePreviewLimit,
-                manuallyLoaded: manualTileLoads.has(tile.tile_id)
+                manuallyLoaded,
+                requiresManualLoad: tileRequiresManualLoad(tile)
               });
               return (
                 <LiveTile
@@ -189,7 +192,15 @@ const LiveTile = memo(function LiveTile({
   const status = cameraStatusBadge(tile.camera);
   const stability = streamStabilityStatus({ slug: tile.camera_slug, reliabilityStatus: tile.camera.reliability_status });
   const shouldRenderPlayer = Boolean(stream && loadState.active && isInViewport);
-  const pausedReason = !stream ? "Brak obrazu" : !loadState.active ? "Podgląd wstrzymany" : !isInViewport ? "Podgląd poza ekranem" : "";
+  const pausedReason = !stream
+    ? "Brak obrazu"
+    : loadState.requiresManualLoad && !loadState.active
+      ? "Niestabilna kamera - kliknij, aby załadować"
+      : !loadState.active
+        ? "Podgląd wstrzymany"
+        : !isInViewport
+          ? "Podgląd poza ekranem"
+          : "";
   const qualityText = stream ? qualityLabel(qualityRoleForStream(stream)) : "-";
 
   useEffect(() => {
