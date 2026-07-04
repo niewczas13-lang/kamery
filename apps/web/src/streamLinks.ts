@@ -6,7 +6,7 @@ export const preferredSmokeStreamNames = [
   "lukow_c8w_97_sub"
 ];
 
-export type Go2RtcPlaybackMode = "auto" | "mse,mjpeg" | "mse" | "webrtc" | "webrtc/tcp" | "mjpeg";
+export type Go2RtcPlaybackMode = "auto" | "mse,mjpeg" | "mse" | "webrtc" | "webrtc/tcp" | "mjpeg" | "mp4";
 export type PreviewProfile = "auto" | "fast" | "high";
 export type StreamSurface = "grid" | "focus" | "fullscreen" | "split";
 export type StreamLens = "lens1" | "lens2" | "unknown";
