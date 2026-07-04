@@ -37,6 +37,8 @@ import {
   activePreviewLimitCount,
   buildLiveTilePlayerIdentity,
   effectivePreviewProfile,
+  liveTileClassName,
+  liveTilePlaybackMode,
   operatorWallDefaults,
   tileRequiresManualLoad,
   streamStabilityStatus,
@@ -540,6 +542,31 @@ describe("stream stability helpers", () => {
     expect(parsed.searchParams.get("mode")).toBe("mse,mjpeg");
     expect(parsed.searchParams.get("media")).toBe("video");
     expect(parsed.searchParams.get("muted")).toBe("1");
+  });
+
+  it("uses MJPEG-only playback for H9C lens2 and manual unstable camera tiles", () => {
+    expect(liveTilePlaybackMode({ camera_slug: "lukow_h9c_98", lens: "lens2" })).toBe("mjpeg");
+    expect(liveTilePlaybackMode({ camera_slug: "lukow_c8c_60", lens: "single", camera: { reliability_status: "degraded" } })).toBe(
+      "mjpeg"
+    );
+    expect(liveTilePlaybackMode({ camera_slug: "lukow_c8w_97", lens: "single" })).toBe("mse,mjpeg");
+
+    const identity = buildLiveTilePlayerIdentity({
+      baseUrl: "http://127.0.0.1:1984",
+      tileId: "lukow_h9c_98:lens2",
+      streamName: "lukow_h9c_98_lens2_sub",
+      audio: "off",
+      reloadToken: 0,
+      mode: liveTilePlaybackMode({ camera_slug: "lukow_h9c_98", lens: "lens2" })
+    });
+
+    expect(new URL(identity.src).searchParams.get("mode")).toBe("mjpeg");
+  });
+
+  it("marks paused live tiles so hover controls cannot block manual loading", () => {
+    expect(liveTileClassName({ hasStream: true, paused: true })).toContain("preview-paused");
+    expect(liveTileClassName({ hasStream: true, paused: false })).not.toContain("preview-paused");
+    expect(liveTileClassName({ hasStream: false, paused: true })).toContain("no-video");
   });
 
   it("limits active grid previews and lets an over-limit tile load manually", () => {

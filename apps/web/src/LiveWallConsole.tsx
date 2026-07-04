@@ -12,6 +12,8 @@ import { qualityLabel, qualityRoleForStream, type PreviewProfile, type StreamLen
 import {
   activePreviewLimitOptions,
   buildLiveTilePlayerIdentity,
+  liveTileClassName,
+  liveTilePlaybackMode,
   operatorWallDefaults,
   streamStabilityStatus,
   tileRequiresManualLoad,
@@ -177,6 +179,7 @@ const LiveTile = memo(function LiveTile({
     hasAudio: Boolean(stream?.has_audio || tile.camera.has_audio),
     requestedAudio: false
   });
+  const playbackMode = liveTilePlaybackMode(tile);
   const playerIdentity = useMemo(
     () =>
       buildLiveTilePlayerIdentity({
@@ -184,9 +187,10 @@ const LiveTile = memo(function LiveTile({
         tileId: tile.tile_id,
         streamName: stream?.stream_name || null,
         audio: operatorWallDefaults.audio,
+        mode: playbackMode,
         reloadToken
       }),
-    [reloadToken, stream?.stream_name, tile.tile_id]
+    [playbackMode, reloadToken, stream?.stream_name, tile.tile_id]
   );
   const fallback = tileFallbackNotice(tile, profile);
   const status = cameraStatusBadge(tile.camera);
@@ -245,7 +249,7 @@ const LiveTile = memo(function LiveTile({
   }
 
   return (
-    <article ref={articleRef} className={stream ? "camera-card live-tile" : "camera-card live-tile no-video"}>
+    <article ref={articleRef} className={liveTileClassName({ hasStream: Boolean(stream), paused: loadState.paused })}>
       <div className="camera-preview live-tile-preview">
         <div className="stream-skeleton">
           <span>Łączenie...</span>

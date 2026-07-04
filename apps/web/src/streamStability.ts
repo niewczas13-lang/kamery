@@ -47,6 +47,32 @@ export function buildLiveTilePlayerIdentity(options: {
   return { key: options.tileId, src: url.toString() };
 }
 
+export function liveTilePlaybackMode(tile: {
+  camera_slug?: string | null;
+  lens?: string | null;
+  camera?: { slug?: string | null; reliability_status?: string | null } | null;
+}): Go2RtcPlaybackMode {
+  const slug = String(tile.camera_slug || tile.camera?.slug || "").toLowerCase();
+  const lens = String(tile.lens || "").toLowerCase();
+  const reliability = String(tile.camera?.reliability_status || "").toLowerCase();
+  if (
+    slug.includes("c8c_60") ||
+    slug.includes("c8c_102") ||
+    reliability === "unstable" ||
+    reliability === "experimental" ||
+    (slug === "lukow_h9c_98" && lens === "lens2")
+  ) {
+    return "mjpeg";
+  }
+  return stableWallPlaybackMode;
+}
+
+export function liveTileClassName(options: { hasStream: boolean; paused: boolean }): string {
+  return ["camera-card", "live-tile", options.hasStream ? "" : "no-video", options.paused ? "preview-paused" : ""]
+    .filter(Boolean)
+    .join(" ");
+}
+
 export function activePreviewLimitCount(limit: ActivePreviewLimit): number {
   if (limit === "unlimited") {
     return Number.POSITIVE_INFINITY;

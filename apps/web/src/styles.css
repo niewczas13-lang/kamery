@@ -779,6 +779,13 @@ th {
   pointer-events: auto;
 }
 
+.live-tile.preview-paused:hover .tile-hover-panel,
+.live-tile.preview-paused:focus-within .tile-hover-panel {
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+}
+
 .tile-actions,
 .tile-tech,
 .tile-details {
@@ -896,7 +903,7 @@ th {
 
 .preview-placeholder.paused {
   position: relative;
-  z-index: 1;
+  z-index: 5;
   align-content: center;
   gap: 10px;
   color: #cbd5c4;
