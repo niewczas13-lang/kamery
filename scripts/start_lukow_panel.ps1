@@ -1,6 +1,7 @@
 param(
     [switch]$SkipDocker,
     [switch]$SkipFrigate,
+    [switch]$WithFrigate,
     [switch]$SkipFrontend,
     [switch]$OpenBrowser
 )
@@ -34,10 +35,10 @@ if (Test-LukowSecretTemplate -Root $Root) {
 if (-not $SkipDocker) {
     Assert-LukowCommand -Name "docker" -InstallHint "Zainstaluj i uruchom Docker Desktop."
     if ($go2rtcReady) {
-        if ($SkipFrigate) {
-            docker compose up -d --force-recreate go2rtc
-        } else {
+        if ($WithFrigate -and -not $SkipFrigate) {
             docker compose up -d --force-recreate go2rtc frigate
+        } else {
+            docker compose up -d --force-recreate go2rtc
         }
     } else {
         Write-Host "Pominieto docker compose: brak gotowego runtime/config/go2rtc/go2rtc.yaml."
@@ -74,4 +75,8 @@ Write-Host "Panel startuje."
 Write-Host "Frontend: http://127.0.0.1:5173"
 Write-Host "Backend:  http://127.0.0.1:8000"
 Write-Host "go2rtc:   http://127.0.0.1:1984"
-Write-Host "Frigate:  http://127.0.0.1:5000"
+if ($WithFrigate -and -not $SkipFrigate) {
+    Write-Host "Frigate:  http://127.0.0.1:5000"
+} else {
+    Write-Host "Frigate/NVR pominiety. Start NVR: START_NVR_LUKOW.bat"
+}

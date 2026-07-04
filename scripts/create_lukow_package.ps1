@@ -28,6 +28,7 @@ $rootFiles = @(
     "README.md",
     "secrets.local.example.env",
     "START_PANEL_LUKOW.bat",
+    "START_NVR_LUKOW.bat",
     "TEST_DIRECT_LUKOW.bat",
     "TEST_STREAMY_LUKOW.bat",
     "UPDATE_LUKOW.bat"

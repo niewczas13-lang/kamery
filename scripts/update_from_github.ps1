@@ -1,7 +1,8 @@
 param(
     [string]$RepoUrl = "https://github.com/niewczas13-lang/kamery.git",
     [string]$Branch = "main",
-    [switch]$RestartServices
+    [switch]$RestartServices,
+    [switch]$WithFrigate
 )
 
 $ErrorActionPreference = "Stop"
@@ -37,7 +38,7 @@ if ($RestartServices) {
     if (Test-Path -LiteralPath (Join-Path $Root "runtime\config\go2rtc\go2rtc.yaml")) {
         docker compose up -d go2rtc
     }
-    if (Test-Path -LiteralPath (Join-Path $Root "runtime\config\frigate\config.yml")) {
+    if ($WithFrigate -and (Test-Path -LiteralPath (Join-Path $Root "runtime\config\frigate\config.yml"))) {
         docker compose up -d frigate
     }
 }

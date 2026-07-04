@@ -11,13 +11,15 @@
    - `secrets.local.env` - verification codes / hasla kamer,
    - `cameras.local.yml` - hosty kamer w lokalnym LAN, jesli robisz probe.
 4. Kliknij `START_PANEL_LUKOW.bat`.
+   - Domyslnie startuje tylko panel + go2rtc, bez ciezkiego obrazu Frigate/NVR.
+   - NVR/nagrania uruchamiaj osobno przez `START_NVR_LUKOW.bat`.
 
 Adresy lokalne:
 
 - Panel: `http://127.0.0.1:5173`
 - Backend: `http://127.0.0.1:8000`
 - go2rtc: `http://127.0.0.1:1984`
-- Frigate: `http://127.0.0.1:5000`
+- Frigate/NVR: `http://127.0.0.1:5000` po uruchomieniu `START_NVR_LUKOW.bat`
 
 ## Aktualizacja z GitHuba
 
