@@ -30,7 +30,9 @@ if (Test-LukowSecretTemplate -Root $Root) {
     $go2rtcReady = Test-Path -LiteralPath (Join-Path $Root "runtime\config\go2rtc\go2rtc.yaml")
 }
 
-& $Python -m ezviz_panel.backend frigate-render-runtime
+if ($WithFrigate -and -not $SkipFrigate) {
+    & $Python -m ezviz_panel.backend frigate-render-runtime
+}
 
 if (-not $SkipDocker) {
     Assert-LukowCommand -Name "docker" -InstallHint "Zainstaluj i uruchom Docker Desktop."
