@@ -348,6 +348,16 @@ def _render_frigate_yaml(cameras: list[FrigateCameraEntry]) -> str:
         "detectors:",
         "  cpu1:",
         "    type: cpu",
+        "motion:",
+        "  threshold: 45",
+        "  contour_area: 35",
+        "objects:",
+        "  track:",
+        "    - person",
+        "  filters:",
+        "    person:",
+        "      min_score: 0.7",
+        "      threshold: 0.85",
         "cameras:",
     ]
     if not cameras:

@@ -6,6 +6,15 @@ export type StreamStabilityLabel = "stabilny" | "obniżona stabilność" | "nies
 export type StreamStabilityTone = "good" | "warn" | "bad";
 
 export const stableWallPlaybackMode: Go2RtcPlaybackMode = "mse,mjpeg";
+export const operatorWallDefaults = {
+  previewProfile: "fast",
+  activePreviewLimit: "6",
+  separateLenses: true,
+  showNoVideoInGrid: false,
+  statusFilter: "all",
+  showEventDrawer: false,
+  audio: "off"
+} as const;
 
 export const activePreviewLimitOptions: { value: ActivePreviewLimit; label: string }[] = [
   { value: "2", label: "2" },

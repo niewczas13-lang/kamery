@@ -90,6 +90,32 @@ short because the current system disk is small.
 step, but Stage 5A does not invent Frigate schedule fields. Runtime config emits
 a warning and keeps event-based retention until selected-hour rules exist.
 
+## Event Sensitivity
+
+Frigate remains enabled as the local NVR/events engine, but the main operator
+video wall does not show raw Frigate event overlays or an event drawer. Events
+and recordings stay in the dedicated NVR, Events, Recordings, and focus timeline
+views.
+
+Generated runtime config uses less sensitive defaults than Frigate's baseline:
+
+```yaml
+motion:
+  threshold: 45
+  contour_area: 35
+objects:
+  track:
+    - person
+  filters:
+    person:
+      min_score: 0.7
+      threshold: 0.85
+```
+
+If events are still too noisy in the Lukow LAN, raise `motion.threshold` or
+`motion.contour_area` first. If real person events disappear, lower the person
+filter thresholds slightly.
+
 ## HEVC Warning
 
 Current EZVIZ streams are HEVC/H.265. Stage 5A does not mass-transcode. Frigate
@@ -125,7 +151,7 @@ Nagrywanie używa szybkiego strumienia, bo strumień wysokiej jakości jest nied
 ```
 
 Frigate UI can still be useful for diagnostics, but it is not the primary
-operator UX. EZVIZ Panel owns quality selection and focus mode.
+operator UX. EZVIZ Panel owns the stable muted live wall and focus mode.
 
 ## Lag diagnostics
 

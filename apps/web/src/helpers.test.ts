@@ -37,6 +37,7 @@ import {
   activePreviewLimitCount,
   buildLiveTilePlayerIdentity,
   effectivePreviewProfile,
+  operatorWallDefaults,
   streamStabilityStatus,
   tilePreviewLoadState
 } from "./streamStability";
@@ -450,6 +451,16 @@ describe("operator preferences", () => {
 });
 
 describe("stream stability helpers", () => {
+  it("keeps the operator wall locked to stable muted defaults", () => {
+    expect(operatorWallDefaults.previewProfile).toBe("fast");
+    expect(operatorWallDefaults.activePreviewLimit).toBe("6");
+    expect(operatorWallDefaults.separateLenses).toBe(true);
+    expect(operatorWallDefaults.showNoVideoInGrid).toBe(false);
+    expect(operatorWallDefaults.statusFilter).toBe("all");
+    expect(operatorWallDefaults.showEventDrawer).toBe(false);
+    expect(operatorWallDefaults.audio).toBe("off");
+  });
+
   it("keeps tile keys stable and changes player src only for stream, audio or retry token", () => {
     const first = buildLiveTilePlayerIdentity({
       baseUrl: "http://127.0.0.1:1984",

@@ -14,7 +14,7 @@ Local-first panel for EZVIZ cameras. Current scope is Etap 5B:
 - Polish React/Vite operator console in `apps/web`,
 - local ONVIF PTZ backend and safe short PTZ smoke tests.
 - local Frigate/NVR MVP using go2rtc restreams.
-- Live Console, focus mode, PTZ joystick, H9C dual-lens UX, and stream quality profiles.
+- simplified stable Live Console, muted focus mode, PTZ joystick, and H9C dual-lens UX.
 
 The 25-camera production grid, public RTSP/ONVIF exposure, reverse proxy/HTTPS
 Etap 6A, two-way audio, long retention, and mass transcoding are intentionally
@@ -229,9 +229,9 @@ URLs or camera password values.
 
 The UI is Polish-first. Main operator work happens in `Konsola podglądu`:
 
-- grid cameras load SUB by default in `Auto`,
-- `Wysoka jakość` switches to MAIN only after an explicit click/focus,
-- focus mode prefers MAIN and shows MAIN/SUB quality metadata,
+- grid cameras are locked to SUB/fast playback for stability,
+- focus mode is also muted and uses the stable fast profile by default,
+- MAIN streams remain useful for recording and direct diagnostics, not the default wall,
 - H9C shows `Obiektyw 1`, `Obiektyw 2`, and `Widok podzielony`,
 - PTZ uses a joystick-style safe nudge control for cameras with `has_ptz=true`.
 
@@ -304,13 +304,12 @@ camera from a logical preview window: H9C can appear as `Obiektyw 1` and
 `Obiektyw 2`, while focus mode still treats it as one PTZ device.
 
 - normal tiles show mostly video, title, and compact badges,
-- technical details live in the hover overlay and focus mode,
-- quality is controlled globally with `Auto / Szybka / Wysoka`,
-- per-tile quality buttons are intentionally removed,
-- grid `Auto` uses SUB/fast streams, focus uses MAIN/high streams when present,
-- cameras without video are listed under `Kamery bez obrazu` unless explicitly shown in the grid,
-- saved layouts use `localStorage` and store tile ids only,
-- the event drawer shows recent Frigate events without exposing Frigate config,
+- the live wall exposes only location filtering plus layout/active-preview count,
+- quality is not operator-selectable in the wall; it is locked to SUB/fast streams,
+- video wall playback uses the stable go2rtc mode and stays muted,
+- H9C lenses are shown as separate preview windows by default,
+- cameras without video stay out of the default grid,
+- Frigate events are not overlaid on the live wall; use Events/Recordings/focus timeline,
 - Etap 6A public HTTPS/reverse proxy remains deferred.
 
 ## Etap 5D Operator Polish
@@ -319,16 +318,12 @@ camera from a logical preview window: H9C can appear as `Obiektyw 1` and
 
 - `Zmień nazwę` lets the operator set friendly camera/tile labels in
   `localStorage` keys `cameraDisplayNames` and `tileDisplayNames`.
-- The layout editor opens with `Edytuj układ`; it can hide/show tiles, move them
-  with `Góra` / `Dół`, save a `Własny układ`, set it active, and restore the
-  default. Layouts store tile ids, order, visibility, layout size, quality mode,
-  and split-lens preference only.
-- `Tryb pełnoekranowy` hides the sidebar and keeps a compact top status strip.
-  Escape exits when focus mode is not open.
-- `Tryb monitora` hides edit controls, keeps the video wall and event drawer,
-  refreshes status periodically, and never enables audio.
-- Recent Frigate events can highlight a tile as `Nowe zdarzenie`; focus mode
-  shows `Ostatnie zdarzenia i nagrania` as a mini timeline.
+- Layout is intentionally simple in the live wall: use `Auto / 1 / 2 / 4 / 6 / 9`
+  and the active-preview limit. Saved layout editing is disabled in this stage.
+- Fullscreen/monitor/event-drawer controls were removed from the main wall to
+  keep the operator surface stable.
+- Recent Frigate events are available in the Events view and focus mode mini
+  timeline, but they do not highlight live tiles.
 - H9C focus mode includes `PTZ steruje` with `Obiektyw 1`, `Obiektyw 2`, or
   `Nie wiem / do sprawdzenia`; this is local UI state, not a model assumption.
 - PTZ movement has a session-only `Blokada ruchu PTZ`. The panel starts locked,
@@ -337,30 +332,20 @@ camera from a logical preview window: H9C can appear as `Obiektyw 1` and
 
 ### Polityka dźwięku
 
-The video wall is always muted. Grid, monitor mode, fullscreen wall, H9C
-dual-lens tiles, and stream previews request `muted=1` / `media=video` and do
-not grant iframe autoplay-audio permission. There is no global `Włącz dźwięk
-wszystkich kamer` action.
-
-Audio can be enabled only in focus mode for one active player after a manual
-click on `Włącz dźwięk`. Closing focus mode, switching camera, switching lens,
-or refreshing the page returns to `Dźwięk wyłączony`. H9C split view can play
-audio only from the active lens; the other lens remains muted.
+The video wall and focus mode are muted. Stream previews request `muted=1` /
+`media=video` and do not grant iframe autoplay-audio permission. There is no
+global or focus-mode action to enable camera audio in the operator UI.
 
 ## Etap 5E Stream Stability
 
 `Konsola podglądu` now protects the browser from loading every HEVC iframe at
 once:
 
-- `Maksymalna liczba aktywnych podglądów` defaults to `4` with options `2 / 4 /
-  6 / 9 / bez limitu`.
+- `Aktywne podglądy` defaults to `6` with options `2 / 4 / 6 / 9`.
 - Tiles outside the active limit render `Podgląd wstrzymany` and load only after
   `Kliknij, aby załadować`.
-- `Tryb oszczędny` forces `Szybka` quality, limits active previews to `2`, keeps
-  audio off, and slows live polling.
-- `Pokaż diagnostykę streamów` overlays per-tile `tile_id`, stream name, active
-  state, mount count, reload count, src changes, last load/error, active-limit
-  status, offscreen status, and stability label. It never displays RTSP URLs.
+- Stream diagnostics are not shown in the operator wall. Use the diagnostics
+  scripts and sanitized logs when debugging.
 - The wall uses stable `tile_id` React keys. Player `src` changes only when the
   stream name, audio policy, or retry token changes.
 

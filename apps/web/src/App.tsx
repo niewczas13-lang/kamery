@@ -49,7 +49,7 @@ import {
   type PreviewProfile,
   type StreamLens
 } from "./streamLinks";
-import { stableWallPlaybackMode } from "./streamStability";
+import { operatorWallDefaults, stableWallPlaybackMode } from "./streamStability";
 import { apiErrorMessage, cameraStatusBadge } from "./status";
 import type {
   BackendHealth,
@@ -110,11 +110,9 @@ export default function App() {
   const [operatorFullscreen, setOperatorFullscreen] = useState(false);
   const [monitorMode, setMonitorMode] = useState(false);
   const [ecoMode, setEcoMode] = useState(false);
-  const [focusAudioEnabled, setFocusAudioEnabled] = useState(false);
   const [ptzControlUnlocked, setPtzControlUnlocked] = useState(false);
-  const [search, setSearch] = useState("");
-  const [locationFilter, setLocationFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [locationFilter, setLocationFilter] = useState("all");
   const [ptzSpeed, setPtzSpeed] = useState(0.3);
   const [ptzDuration, setPtzDuration] = useState(defaultPtzDurationMs());
   const [ptzStates, setPtzStates] = useState<Record<number, PtzUiState>>({});
@@ -217,19 +215,16 @@ export default function App() {
   }
 
   function openFocus(cameraId: number, lens: StreamLens = "lens1") {
-    setFocusAudioEnabled(false);
     setPtzControlUnlocked(false);
-    setFocus({ cameraId, lens, profile: "auto", mode: "single" });
+    setFocus({ cameraId, lens, profile: operatorWallDefaults.previewProfile, mode: "single" });
   }
 
   function updateFocus(nextFocus: FocusState) {
-    setFocusAudioEnabled(false);
     setPtzControlUnlocked(false);
     setFocus(nextFocus);
   }
 
   function closeFocus() {
-    setFocusAudioEnabled(false);
     setPtzControlUnlocked(false);
     setFocus(null);
   }
@@ -300,8 +295,8 @@ export default function App() {
     [recordingPolicies]
   );
   const filteredCameras = useMemo(
-    () => filterCameras(cameras, streams, policiesBySlug, { search, locationFilter, statusFilter }),
-    [cameras, streams, policiesBySlug, search, locationFilter, statusFilter]
+    () => filterCameras(cameras, streams, policiesBySlug, { search: "", locationFilter, statusFilter: "all" }),
+    [cameras, streams, policiesBySlug, locationFilter]
   );
   const focusCamera = focus ? cameras.find((camera) => camera.id === focus.cameraId) || null : null;
 
@@ -340,8 +335,6 @@ export default function App() {
       <main className="operator-main">
         <Topbar
           view={view}
-          search={search}
-          onSearch={setSearch}
           locations={locations}
           locationFilter={locationFilter}
           onLocationFilter={setLocationFilter}
@@ -374,38 +367,10 @@ export default function App() {
             streams={streams}
             locationMap={locationMap}
             policiesBySlug={policiesBySlug}
-            events={frigateEvents?.events || []}
             layout={layout}
             onLayout={setLayout}
-            statusFilter={statusFilter}
-            onStatusFilter={setStatusFilter}
-            consoleProfile={consoleProfile}
-            onConsoleProfile={setConsoleProfile}
-            separateLenses={separateLenses}
-            onSeparateLenses={setSeparateLenses}
-            showNoVideoInGrid={showNoVideoInGrid}
-            onShowNoVideoInGrid={setShowNoVideoInGrid}
-            customLayouts={customLayouts}
-            activeLayoutId={activeLayoutId}
-            onActiveLayoutId={(id) => {
-              setActiveLayoutId(id);
-              window.localStorage.setItem(activeLiveLayoutKey, id);
-            }}
-            onCustomLayouts={(layouts) => {
-              setCustomLayouts(layouts);
-              window.localStorage.setItem(liveLayoutsKey, JSON.stringify(layouts));
-            }}
             displayNames={displayNames}
-            fullscreenMode={operatorFullscreen}
-            monitorMode={monitorMode}
-            ecoMode={ecoMode}
-            onFullscreenMode={setOperatorFullscreen}
-            onMonitorMode={setMonitorMode}
-            onEcoMode={setEcoMode}
-            onRenameTile={renameTile}
-            onResetTileName={resetTileName}
             onFocus={(cameraId, lens = "lens1") => openFocus(cameraId, lens)}
-            onSnapshot={(cameraId) => void snapshotCamera(cameraId)}
           />
         ) : null}
         {!loading && view === "cameras" ? (
@@ -445,13 +410,11 @@ export default function App() {
           ptzDuration={ptzDuration}
           displayNames={displayNames}
           ptzTargetLens={ptzTargetLens[focusCamera.slug] || "unknown"}
-          focusAudioEnabled={focusAudioEnabled}
           ptzControlUnlocked={ptzControlUnlocked}
           onPtzSpeed={setPtzSpeed}
           onPtzDuration={setPtzDuration}
           onFocusChange={updateFocus}
           onClose={closeFocus}
-          onFocusAudio={setFocusAudioEnabled}
           onPtzControlUnlocked={setPtzControlUnlocked}
           onRenameCamera={renameCamera}
           onResetCamera={resetCameraName}
@@ -547,8 +510,6 @@ function LoginView({ onAuthenticated }: { onAuthenticated: (token: string) => vo
 
 function Topbar({
   view,
-  search,
-  onSearch,
   locations,
   locationFilter,
   onLocationFilter,
@@ -557,8 +518,6 @@ function Topbar({
   frigateHealth
 }: {
   view: View;
-  search: string;
-  onSearch: (value: string) => void;
   locations: Location[];
   locationFilter: string;
   onLocationFilter: (value: string) => void;
@@ -573,7 +532,6 @@ function Topbar({
         <h2>{viewLabel(view)}</h2>
       </div>
       <div className="topbar-controls">
-        <input value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Szukaj kamer..." />
         <select value={locationFilter} onChange={(event) => onLocationFilter(event.target.value)}>
           <option value="all">Wszystkie lokalizacje</option>
           {locations.map((location) => (
@@ -902,11 +860,9 @@ function FocusMode({
   onPtzDuration,
   displayNames,
   ptzTargetLens,
-  focusAudioEnabled,
   ptzControlUnlocked,
   onFocusChange,
   onClose,
-  onFocusAudio,
   onPtzControlUnlocked,
   onRenameCamera,
   onResetCamera,
@@ -927,13 +883,11 @@ function FocusMode({
   ptzDuration: number;
   displayNames: DisplayNameMaps;
   ptzTargetLens: PtzTargetLens;
-  focusAudioEnabled: boolean;
   ptzControlUnlocked: boolean;
   onPtzSpeed: (speed: number) => void;
   onPtzDuration: (durationMs: number) => void;
   onFocusChange: (state: FocusState) => void;
   onClose: () => void;
-  onFocusAudio: (enabled: boolean) => void;
   onPtzControlUnlocked: (unlocked: boolean) => void;
   onRenameCamera: (camera: Camera) => void;
   onResetCamera: (camera: Camera) => void;
@@ -965,7 +919,7 @@ function FocusMode({
   const activeAudioPolicy = playerAudioPolicy({
     surface: focus.mode === "split" ? "split" : "focus",
     hasAudio: Boolean(activeStream?.has_audio || camera.has_audio),
-    requestedAudio: focusAudioEnabled,
+    requestedAudio: false,
     active: true
   });
   const timelineEvents = eventsForFocusLens(camera, events, focus.lens);
@@ -1058,26 +1012,9 @@ function FocusMode({
                 ...focus,
                 mode: value === "split" ? "split" : "single",
                 lens: value === "lens2" ? "lens2" : "lens1",
-                profile: value === "split" ? "fast" : "auto"
+                profile: operatorWallDefaults.previewProfile
               })
             }
-          />
-        ) : null}
-        <Segmented
-          label="Jakość"
-          value={focus.profile}
-          options={[
-            ["auto", "Auto"],
-            ["fast", "Szybki podgląd"],
-            ["high", "Wysoka jakość"]
-          ]}
-          onChange={(value) => onFocusChange({ ...focus, profile: value as PreviewProfile, mode: "single" })}
-        />
-        {activeStream ? (
-          <AudioControl
-            policy={activeAudioPolicy}
-            split={focus.mode === "split"}
-            onToggle={() => onFocusAudio(!activeAudioPolicy.enabled)}
           />
         ) : null}
         {focus.mode === "split" ? (
@@ -1088,14 +1025,14 @@ function FocusMode({
               const splitAudioPolicy = playerAudioPolicy({
                 surface: "split",
                 hasAudio: Boolean(stream.has_audio || camera.has_audio),
-                requestedAudio: focusAudioEnabled,
+                requestedAudio: false,
                 active: isActiveLens
               });
               return (
                 <div className="split-player" key={stream.stream_name}>
                   <StreamPlayer stream={stream} audioMode={splitAudioPolicy.playerAudio} audioLabel={splitAudioPolicy.label} />
                   <button className="text-button" onClick={() => onFocusChange({ ...focus, lens, mode: "split", profile: "fast" })}>
-                    {isActiveLens ? "Aktywny obiektyw" : "Ustaw aktywny dźwięk"}
+                    {isActiveLens ? "Aktywny obiektyw" : "Ustaw aktywny obiektyw"}
                   </button>
                 </div>
               );
@@ -1108,7 +1045,7 @@ function FocusMode({
               <div className="lens-miniature">
                 <button
                   className="text-button"
-                  onClick={() => onFocusChange({ ...focus, lens: secondaryLens, profile: "auto", mode: "single" })}
+                  onClick={() => onFocusChange({ ...focus, lens: secondaryLens, profile: operatorWallDefaults.previewProfile, mode: "single" })}
                   aria-label="Przełącz na drugi obiektyw"
                 >
                   {secondaryLens === "lens2" ? "Obiektyw 2" : "Obiektyw 1"}

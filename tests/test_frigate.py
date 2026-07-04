@@ -61,6 +61,10 @@ class FrigateConfigTests(unittest.TestCase):
 
         self.assertIn("mqtt:", result.yaml)
         self.assertIn("enabled: false", result.yaml)
+        self.assertIn("threshold: 45", result.yaml)
+        self.assertIn("contour_area: 35", result.yaml)
+        self.assertIn("min_score: 0.7", result.yaml)
+        self.assertIn("threshold: 0.85", result.yaml)
         self.assertIn("rtsp://go2rtc:8554/lukow_h9c_98_sub", result.yaml)
         self.assertIn("rtsp://go2rtc:8554/lukow_h9c_98_lens2_main", result.yaml)
         self.assertNotIn("CAMERA98_PASSWORD", result.yaml)
