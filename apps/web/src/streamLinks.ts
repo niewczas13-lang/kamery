@@ -6,12 +6,17 @@ export const preferredSmokeStreamNames = [
   "lukow_c8w_97_sub"
 ];
 
+export type Go2RtcPlaybackMode = "auto" | "mse,mjpeg" | "mse" | "webrtc" | "webrtc/tcp" | "mjpeg";
 export type PreviewProfile = "auto" | "fast" | "high";
 export type StreamSurface = "grid" | "focus" | "fullscreen" | "split";
 export type StreamLens = "lens1" | "lens2" | "unknown";
 export type QualityRole = "main" | "sub" | "unknown";
 
-export function buildGo2RtcPlayerUrl(baseUrl: string, streamName: string, options: { audio?: "off" | "on" } = {}): string {
+export function buildGo2RtcPlayerUrl(
+  baseUrl: string,
+  streamName: string,
+  options: { audio?: "off" | "on"; mode?: Go2RtcPlaybackMode } = {}
+): string {
   const url = new URL("stream.html", ensureTrailingSlash(baseUrl));
   url.searchParams.set("src", streamName);
   if (options.audio === "off") {
@@ -20,6 +25,9 @@ export function buildGo2RtcPlayerUrl(baseUrl: string, streamName: string, option
   } else if (options.audio === "on") {
     url.searchParams.set("media", "video,audio");
     url.searchParams.set("muted", "0");
+  }
+  if (options.mode && options.mode !== "auto") {
+    url.searchParams.set("mode", options.mode);
   }
   return url.toString();
 }

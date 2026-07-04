@@ -1,9 +1,11 @@
 import { buildGo2RtcPlayerUrl } from "./streamLinks";
-import type { PreviewProfile } from "./streamLinks";
+import type { Go2RtcPlaybackMode, PreviewProfile } from "./streamLinks";
 
 export type ActivePreviewLimit = "2" | "4" | "6" | "9" | "unlimited";
 export type StreamStabilityLabel = "stabilny" | "obniżona stabilność" | "niestabilny" | "eksperymentalny";
 export type StreamStabilityTone = "good" | "warn" | "bad";
+
+export const stableWallPlaybackMode: Go2RtcPlaybackMode = "mse,mjpeg";
 
 export const activePreviewLimitOptions: { value: ActivePreviewLimit; label: string }[] = [
   { value: "2", label: "2" },
@@ -19,11 +21,17 @@ export function buildLiveTilePlayerIdentity(options: {
   streamName?: string | null;
   audio: "off" | "on";
   reloadToken: number;
+  mode?: Go2RtcPlaybackMode;
 }): { key: string; src: string } {
   if (!options.streamName) {
     return { key: options.tileId, src: "" };
   }
-  const url = new URL(buildGo2RtcPlayerUrl(options.baseUrl, options.streamName, { audio: options.audio }));
+  const url = new URL(
+    buildGo2RtcPlayerUrl(options.baseUrl, options.streamName, {
+      audio: options.audio,
+      mode: options.mode || stableWallPlaybackMode
+    })
+  );
   if (options.reloadToken > 0) {
     url.searchParams.set("reload", String(options.reloadToken));
   }

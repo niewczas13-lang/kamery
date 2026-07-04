@@ -62,6 +62,19 @@ describe("stream links", () => {
     expect(url).not.toContain("@");
   });
 
+  it("can force the go2rtc MSE player with MJPEG fallback for stable HEVC wall playback", () => {
+    const url = buildGo2RtcPlayerUrl("http://127.0.0.1:1984", "lukow_h9c_98_sub", {
+      audio: "off",
+      mode: "mse,mjpeg"
+    });
+    const parsed = new URL(url);
+
+    expect(parsed.searchParams.get("mode")).toBe("mse,mjpeg");
+    expect(parsed.searchParams.get("media")).toBe("video");
+    expect(url).not.toContain("rtsp://");
+    expect(url).not.toContain("@");
+  });
+
   it("defaults live smoke to substreams", () => {
     expect(preferredSmokeStreamNames).toEqual([
       "lukow_h9c_98_sub",
@@ -465,6 +478,21 @@ describe("stream stability helpers", () => {
     expect(afterRetry.src).not.toBe(first.src);
     expect(first.src).not.toContain("rtsp://");
     expect(first.src).not.toContain("@");
+  });
+
+  it("uses MSE plus MJPEG fallback for live wall iframe players by default", () => {
+    const identity = buildLiveTilePlayerIdentity({
+      baseUrl: "http://127.0.0.1:1984",
+      tileId: "lukow_c8w_97:single",
+      streamName: "lukow_c8w_97_sub",
+      audio: "off",
+      reloadToken: 0
+    });
+    const parsed = new URL(identity.src);
+
+    expect(parsed.searchParams.get("mode")).toBe("mse,mjpeg");
+    expect(parsed.searchParams.get("media")).toBe("video");
+    expect(parsed.searchParams.get("muted")).toBe("1");
   });
 
   it("limits active grid previews and lets an over-limit tile load manually", () => {

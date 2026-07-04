@@ -49,6 +49,7 @@ import {
   type PreviewProfile,
   type StreamLens
 } from "./streamLinks";
+import { stableWallPlaybackMode } from "./streamStability";
 import { apiErrorMessage, cameraStatusBadge } from "./status";
 import type {
   BackendHealth,
@@ -819,7 +820,7 @@ function CameraCard({
 }) {
   const stream = selectStreamForSurface(streams, { profile, surface: "grid", lens: "lens1" });
   const isLoaded = Boolean(stream && loadedStreams.includes(stream.stream_name));
-  const playerUrl = stream ? buildGo2RtcPlayerUrl(GO2RTC_PUBLIC_URL, stream.stream_name, { audio: "off" }) : "";
+  const playerUrl = stream ? buildGo2RtcPlayerUrl(GO2RTC_PUBLIC_URL, stream.stream_name, { audio: "off", mode: stableWallPlaybackMode }) : "";
   const status = cameraStatusBadge(camera);
   const recording = Boolean(policy?.enabled);
   return (
@@ -1114,7 +1115,7 @@ function FocusMode({
                 </button>
                 <iframe
                   title={`${secondaryStream.stream_name}-mini`}
-                  src={buildGo2RtcPlayerUrl(GO2RTC_PUBLIC_URL, secondaryStream.stream_name, { audio: "off" })}
+                  src={buildGo2RtcPlayerUrl(GO2RTC_PUBLIC_URL, secondaryStream.stream_name, { audio: "off", mode: stableWallPlaybackMode })}
                   allow="fullscreen"
                 />
               </div>
@@ -1368,7 +1369,7 @@ function StreamPlayer({
     <div className={large ? "stream-player large" : "stream-player"}>
       <iframe
         title={stream.stream_name}
-        src={buildGo2RtcPlayerUrl(GO2RTC_PUBLIC_URL, stream.stream_name, { audio: audioMode })}
+        src={buildGo2RtcPlayerUrl(GO2RTC_PUBLIC_URL, stream.stream_name, { audio: audioMode, mode: stableWallPlaybackMode })}
         allow={audioMode === "on" ? "autoplay; fullscreen" : "fullscreen"}
       />
       <div className="player-caption">
