@@ -15,6 +15,7 @@ from ezviz_panel.backend.database import Base
 from ezviz_panel.backend.frigate import (
     fetch_frigate_events,
     fetch_frigate_health,
+    fetch_frigate_recordings,
     get_or_create_recording_policy,
     render_frigate_preview,
     render_frigate_runtime_config,
@@ -170,6 +171,21 @@ class FrigateClientTests(unittest.TestCase):
         self.assertFalse(payload["reachable"])
         self.assertIn("connection refused", payload["error"])
 
+    def test_health_uses_api_version_when_root_page_disconnects(self) -> None:
+        requested_paths: list[str] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            requested_paths.append(request.url.path)
+            if request.url.path == "/api/version":
+                return httpx.Response(200, text="0.17.0")
+            raise httpx.RemoteProtocolError("server disconnected")
+
+        payload = fetch_frigate_health("http://127.0.0.1:5000", transport=httpx.MockTransport(handler))
+
+        self.assertTrue(payload["reachable"])
+        self.assertEqual(payload["version"], "0.17.0")
+        self.assertEqual(requested_paths, ["/api/version"])
+
     def test_events_are_sanitized(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
             self.assertEqual(request.url.path, "/api/events")
@@ -209,6 +225,34 @@ class FrigateClientTests(unittest.TestCase):
         self.assertTrue(payload["reachable"])
         self.assertEqual(payload["events"][0]["id"], "event-2")
         self.assertEqual(requested_paths, ["/api/events", "/api/events/search"])
+
+    def test_events_fall_back_to_search_endpoint_after_disconnect(self) -> None:
+        requested_paths: list[str] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            requested_paths.append(request.url.path)
+            if request.url.path == "/api/events":
+                raise httpx.RemoteProtocolError("Server disconnected without sending a response.")
+            if request.url.path == "/api/events/search":
+                return httpx.Response(200, json=[{"id": "event-3", "camera": "lukow_c8w_97"}])
+            return httpx.Response(404, text="not found")
+
+        payload = fetch_frigate_events("http://127.0.0.1:5000", transport=httpx.MockTransport(handler))
+
+        self.assertTrue(payload["reachable"])
+        self.assertEqual(payload["events"][0]["id"], "event-3")
+        self.assertEqual(requested_paths, ["/api/events", "/api/events/search"])
+
+    def test_recordings_use_limited_review_query(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            self.assertEqual(request.url.path, "/api/review")
+            self.assertEqual(request.url.params.get("limit"), "50")
+            return httpx.Response(200, json=[{"id": "review-1", "camera": "lukow_h9c_98"}])
+
+        payload = fetch_frigate_recordings("http://127.0.0.1:5000", transport=httpx.MockTransport(handler))
+
+        self.assertTrue(payload["reachable"])
+        self.assertEqual(payload["recordings"][0]["id"], "review-1")
 
     def test_sync_frigate_events_imports_once(self) -> None:
         engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
