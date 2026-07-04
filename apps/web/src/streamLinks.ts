@@ -19,10 +19,11 @@ export function buildGo2RtcPlayerUrl(
 ): string {
   const url = new URL("stream.html", ensureTrailingSlash(baseUrl));
   url.searchParams.set("src", streamName);
-  if (options.audio === "off") {
+  const audio = options.audio || "off";
+  if (audio === "off") {
     url.searchParams.set("media", "video");
     url.searchParams.set("muted", "1");
-  } else if (options.audio === "on") {
+  } else if (audio === "on") {
     url.searchParams.set("media", "video,audio");
     url.searchParams.set("muted", "0");
   }

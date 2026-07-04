@@ -49,9 +49,17 @@ describe("stream links", () => {
   it("builds go2rtc player URLs from stream names only", () => {
     const url = buildGo2RtcPlayerUrl("http://127.0.0.1:1984", "lukow_h9c_98_sub");
 
-    expect(url).toBe("http://127.0.0.1:1984/stream.html?src=lukow_h9c_98_sub");
+    expect(url).toBe("http://127.0.0.1:1984/stream.html?src=lukow_h9c_98_sub&media=video&muted=1");
     expect(url).not.toContain("rtsp://");
     expect(url).not.toContain("@");
+  });
+
+  it("defaults go2rtc player URLs to muted video-only playback", () => {
+    const url = buildGo2RtcPlayerUrl("http://127.0.0.1:1984", "lukow_c8w_97_sub");
+    const parsed = new URL(url);
+
+    expect(parsed.searchParams.get("media")).toBe("video");
+    expect(parsed.searchParams.get("muted")).toBe("1");
   });
 
   it("builds video-only go2rtc URLs for muted wall players", () => {
