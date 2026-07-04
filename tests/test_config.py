@@ -13,11 +13,13 @@ class ConfigTests(unittest.TestCase):
         config = load_config(Path(__file__).resolve().parents[1] / "cameras.example.yml")
 
         self.assertEqual(len(config.locations), 1)
-        self.assertEqual(len(config.cameras), 3)
+        self.assertEqual(len(config.cameras), 4)
         self.assertEqual(config.locations[0].network_cidr, "192.168.80.0/24")
         self.assertEqual(config.cameras[0].id, "lukow_h9c_98")
         self.assertEqual(config.cameras[0].host, "192.168.80.98")
         self.assertTrue(config.cameras[0].enabled)
+        self.assertEqual(config.cameras[3].id, "lukow_c8c_102")
+        self.assertEqual(config.cameras[3].host, "192.168.80.102")
 
     def test_ignores_comments_outside_quotes(self) -> None:
         parsed = parse_simple_yaml(

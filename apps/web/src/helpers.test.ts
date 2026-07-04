@@ -475,7 +475,7 @@ describe("stream stability helpers", () => {
     expect(operatorWallDefaults.rawMonitorMode).toBe(true);
   });
 
-  it("requires manual loading for unstable C8C tiles", () => {
+  it("auto-loads C8C tiles in the live wall even when they are unstable", () => {
     const c8c60 = buildOperatorTiles(
       [camera(60, "lukow_c8c_60", "C8C 60", { reliability_status: "degraded" })],
       [streamFor(60, "lukow_c8c_60_sub", "sub", "768x432")],
@@ -489,13 +489,13 @@ describe("stream stability helpers", () => {
       { separateLenses: true, showNoVideoInGrid: false }
     ).tiles[0];
 
-    expect(tileRequiresManualLoad(c8c60)).toBe(true);
-    expect(tileRequiresManualLoad(c8c102)).toBe(true);
-    expect(tilePreviewLoadState({ index: 0, limit: "6", manuallyLoaded: false, requiresManualLoad: true })).toMatchObject({
-      active: false,
-      paused: true
+    expect(tileRequiresManualLoad(c8c60)).toBe(false);
+    expect(tileRequiresManualLoad(c8c102)).toBe(false);
+    expect(tilePreviewLoadState({ index: 0, limit: "6", manuallyLoaded: false, requiresManualLoad: false })).toMatchObject({
+      active: true,
+      paused: false
     });
-    expect(tilePreviewLoadState({ index: 0, limit: "6", manuallyLoaded: true, requiresManualLoad: true })).toMatchObject({
+    expect(tilePreviewLoadState({ index: 0, limit: "6", manuallyLoaded: true, requiresManualLoad: false })).toMatchObject({
       active: true,
       paused: false
     });

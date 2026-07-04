@@ -184,6 +184,7 @@ const RawLiveTile = memo(function RawLiveTile({
     <article className={liveTileClassName({ hasStream: Boolean(stream), paused: loadState.paused, rawMonitorMode: operatorWallDefaults.rawMonitorMode })}>
       <div className="camera-preview live-tile-preview raw-live-preview">
         {shouldRenderPlayer ? <iframe title={stream?.stream_name} src={playerIdentity.src} allow="fullscreen" loading="eager" /> : null}
+        {shouldRenderPlayer ? <button className="raw-tile-open" type="button" onClick={onFocus} aria-label={`Otworz szczegoly ${displayName}`} /> : null}
         {!shouldRenderPlayer ? (
           <div className="preview-placeholder paused raw-placeholder" onClick={stream ? onManualLoad : undefined}>
             <strong>{displayName}</strong>

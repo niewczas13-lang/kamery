@@ -124,9 +124,8 @@ export function tileRequiresManualLoad(tile: {
   camera_slug?: string | null;
   camera?: { slug?: string | null; reliability_status?: string | null } | null;
 }): boolean {
-  const slug = String(tile.camera_slug || tile.camera?.slug || "").toLowerCase();
-  const reliability = String(tile.camera?.reliability_status || "").toLowerCase();
-  return reliability === "unstable" || reliability === "experimental" || slug.includes("c8c_60") || slug.includes("c8c_102");
+  void tile;
+  return false;
 }
 
 export function streamStabilityStatus(options: {

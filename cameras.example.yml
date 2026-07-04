@@ -38,3 +38,15 @@ cameras:
     onvif_password_secret_ref: "CAMERA60_PASSWORD"
     enabled: true
     notes: "Excluded from default smoke/NVR until local RTSP is stable."
+
+  - id: "lukow_c8c_102"
+    name: "Lukow / C8C 102"
+    location_id: "lukow"
+    model: "CS-C8c-R100-1J5WKFL"
+    host: "192.168.80.102"
+    rtsp_username: "admin"
+    rtsp_password_secret_ref: "CAMERA102_PASSWORD"
+    onvif_username: "admin"
+    onvif_password_secret_ref: "CAMERA102_PASSWORD"
+    enabled: true
+    notes: "Second C8C camera; keep recording disabled until local RTSP stability is confirmed."

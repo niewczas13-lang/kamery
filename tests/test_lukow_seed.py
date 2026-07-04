@@ -30,13 +30,15 @@ class LukowSeedTests(unittest.TestCase):
             streams = list_go2rtc_streams(session)
             c8c = session.query(Camera).filter(Camera.slug == "lukow_c8c_60").one()
 
-        self.assertEqual(first["total"], 3)
-        self.assertEqual(set(first["created"]), {"lukow_h9c_98", "lukow_c8w_97", "lukow_c8c_60"})
+        self.assertEqual(first["total"], 4)
+        self.assertEqual(set(first["created"]), {"lukow_h9c_98", "lukow_c8w_97", "lukow_c8c_60", "lukow_c8c_102"})
         self.assertEqual(second["created"], [])
         self.assertEqual(second["updated"], [])
         self.assertEqual(
             [stream.stream_name for stream in streams],
             [
+                "lukow_c8c_102_main",
+                "lukow_c8c_102_sub",
                 "lukow_c8c_60_main",
                 "lukow_c8c_60_sub",
                 "lukow_c8w_97_sub",
@@ -65,6 +67,7 @@ class LukowSeedTests(unittest.TestCase):
         self.assertIn("CAMERA98_PASSWORD", error)
         self.assertIn("CAMERA97_PASSWORD", error)
         self.assertIn("CAMERA60_PASSWORD", error)
+        self.assertIn("CAMERA102_PASSWORD", error)
 
     def test_lukow_runtime_preloads_wall_substreams_without_main_streams(self) -> None:
         secrets_path = Path("runtime/test-secrets.local.env")
@@ -75,6 +78,7 @@ class LukowSeedTests(unittest.TestCase):
                     "CAMERA98_PASSWORD=secret-h9c",
                     "CAMERA97_PASSWORD=secret-c8w",
                     "CAMERA60_PASSWORD=secret-c8c",
+                    "CAMERA102_PASSWORD=secret-c8c102",
                     "",
                 ]
             ),
@@ -97,9 +101,11 @@ class LukowSeedTests(unittest.TestCase):
             self.assertIn("  lukow_h9c_98_lens2_sub: video", rendered)
             self.assertIn("  lukow_c8w_97_sub: video", rendered)
             self.assertIn("  lukow_c8c_60_sub: video", rendered)
+            self.assertIn("  lukow_c8c_102_sub: video", rendered)
             self.assertNotIn("  lukow_h9c_98_main: video", rendered)
             self.assertNotIn("  lukow_h9c_98_lens2_main: video", rendered)
             self.assertNotIn("  lukow_c8c_60_main: video", rendered)
+            self.assertNotIn("  lukow_c8c_102_main: video", rendered)
         finally:
             secrets_path.unlink(missing_ok=True)
             output_path.unlink(missing_ok=True)

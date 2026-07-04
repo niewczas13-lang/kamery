@@ -82,6 +82,24 @@ LUKOW_CAMERA_SEEDS = [
         has_snapshot=False,
         notes="Seeded as unstable/manual-load live tile. SUB uses /ch1/sub to reduce load; Frigate remains disabled by default.",
     ),
+    LukowCameraSeed(
+        slug="lukow_c8c_102",
+        name="Lukow / C8C 102",
+        host="192.168.80.102",
+        model="CS-C8c-R100-1J5WKFL",
+        secret_ref="CAMERA102_PASSWORD",
+        main_stream_path="/Streaming/Channels/101",
+        sub_stream_path="/Streaming/Channels/102",
+        audio_codec="aac",
+        has_audio=True,
+        video_codec="hevc",
+        video_status="ok",
+        control_status="ptz_ok",
+        has_ptz=True,
+        has_onvif=True,
+        has_snapshot=False,
+        notes="Seeded local second C8C camera. Keep NVR disabled by policy until LAN stability is confirmed.",
+    ),
 ]
 
 
