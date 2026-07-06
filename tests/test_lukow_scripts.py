@@ -52,9 +52,25 @@ class LukowScriptTests(unittest.TestCase):
         self.assertIn("go2rtc frigate", start_script)
         self.assertNotIn("Zatrzymuje Frigate/NVR dla stabilnego live view", start_script)
 
+    def test_nvr_scan_script_reads_secret_and_masks_password(self) -> None:
+        script_path = ROOT / "scripts" / "scan_nvr_lukow.ps1"
+        bat_path = ROOT / "SKANUJ_NVR_LUKOW.bat"
+
+        self.assertTrue(script_path.exists())
+        self.assertTrue(bat_path.exists())
+        script = script_path.read_text(encoding="utf-8")
+        bat = bat_path.read_text(encoding="utf-8")
+
+        self.assertIn("NVR_PASSWORD", script)
+        self.assertIn("192.168.80.129", script)
+        self.assertIn("/Streaming/Channels/", script)
+        self.assertIn("Get-MaskedUrl", script)
+        self.assertNotIn("PASSWORD=", script.replace("NVR_PASSWORD", ""))
+        self.assertIn("scan_nvr_lukow.ps1", bat)
+
     def test_lukow_powershell_scripts_parse(self) -> None:
         command = (
-            "$files=@('.\\scripts\\start_lukow_panel.ps1','.\\scripts\\stop_lukow_panel.ps1');"
+            "$files=@('.\\scripts\\start_lukow_panel.ps1','.\\scripts\\stop_lukow_panel.ps1','.\\scripts\\scan_nvr_lukow.ps1');"
             "foreach($file in $files){"
             "$tokens=$null;$errors=$null;"
             "[System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file),[ref]$tokens,[ref]$errors)|Out-Null;"

@@ -38,6 +38,32 @@ LUKOW_LOCATION = {
     "description": "Local Lukow camera LAN",
 }
 
+# Rejestrator (NVR) jako źródło restreamu dla go2rtc zamiast bezpośrednich kamer.
+# Kamera trzyma wtedy jedną sesję RTSP (do rejestratora), co omija limit sesji.
+# Po uzyskaniu danych rejestratora: ustaw "host", uzupełnij LUKOW_NVR_CHANNELS
+# i przełącz "enabled" na True; hasło trafia do secrets.local.env jako NVR_PASSWORD.
+# Ścieżki wg schematu Hikvision/EZVIZ: kanał N -> /Streaming/Channels/N01 (MAIN), N02 (SUB).
+LUKOW_NVR_RESTREAM: dict[str, Any] = {
+    # enabled zostaje False do czasu wlaczenia RTSP na rejestratorze (port 554
+    # jest zamkniety; otwarty tylko 8000/SDK) i potwierdzenia kanalow skanem
+    # SKANUJ_NVR_LUKOW.bat.
+    "enabled": False,
+    "host": "192.168.80.129",  # EZVIZ CS-X5S (8W)
+    "username": "admin",
+    "secret_ref": "NVR_PASSWORD",
+    "main_path_template": "/Streaming/Channels/{channel}01",
+    "sub_path_template": "/Streaming/Channels/{channel}02",
+}
+
+# slug kamery -> numery kanałów na rejestratorze; "secondary" tylko dla drugiego
+# obiektywu H9C, jeśli rejestrator widzi go jako osobny kanał.
+LUKOW_NVR_CHANNELS: dict[str, dict[str, int]] = {
+    # "lukow_h9c_98": {"primary": 1, "secondary": 2},
+    # "lukow_c8w_97": {"primary": 3},
+    # "lukow_c8c_60": {"primary": 4},
+    # "lukow_c8c_102": {"primary": 5},
+}
+
 LUKOW_CAMERA_SEEDS = [
     LukowCameraSeed(
         slug="lukow_h9c_98",
@@ -171,4 +197,41 @@ def _camera_values(seed: LukowCameraSeed, location_id: int) -> dict[str, Any]:
         "has_two_way_audio_candidate": False,
         "enabled": True,
         "notes": seed.notes,
+        **_nvr_source_values(seed.slug),
+    }
+
+
+def _nvr_source_values(slug: str) -> dict[str, Any]:
+    empty: dict[str, Any] = {
+        "rtsp_source_host": None,
+        "rtsp_source_username": None,
+        "rtsp_source_password_secret_ref": None,
+        "rtsp_source_main_path": None,
+        "rtsp_source_sub_path": None,
+        "rtsp_source_secondary_main_path": None,
+        "rtsp_source_secondary_sub_path": None,
+    }
+    config = LUKOW_NVR_RESTREAM
+    channels = LUKOW_NVR_CHANNELS.get(slug)
+    if not config.get("enabled") or not config.get("host") or not channels:
+        return empty
+
+    def channel_paths(channel: int | None) -> tuple[str | None, str | None]:
+        if channel is None:
+            return None, None
+        return (
+            str(config["main_path_template"]).format(channel=channel),
+            str(config["sub_path_template"]).format(channel=channel),
+        )
+
+    main_path, sub_path = channel_paths(channels.get("primary"))
+    secondary_main_path, secondary_sub_path = channel_paths(channels.get("secondary"))
+    return {
+        "rtsp_source_host": str(config["host"]),
+        "rtsp_source_username": str(config.get("username") or "admin"),
+        "rtsp_source_password_secret_ref": str(config.get("secret_ref") or "NVR_PASSWORD"),
+        "rtsp_source_main_path": main_path,
+        "rtsp_source_sub_path": sub_path,
+        "rtsp_source_secondary_main_path": secondary_main_path,
+        "rtsp_source_secondary_sub_path": secondary_sub_path,
     }

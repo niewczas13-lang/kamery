@@ -257,6 +257,39 @@ class FrigateClientTests(unittest.TestCase):
         self.assertEqual(payload["events"][0]["id"], "event-3")
         self.assertEqual(requested_paths, ["/api/events", "/api/events/search"])
 
+    def test_events_fall_back_to_review_when_event_endpoints_return_500(self) -> None:
+        requested_paths: list[str] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            requested_paths.append(request.url.path)
+            if request.url.path in {"/api/events", "/api/events/search"}:
+                return httpx.Response(500, text="<html>500 Internal Server Error</html>")
+            if request.url.path == "/api/review":
+                self.assertEqual(request.url.params.get("limit"), "50")
+                return httpx.Response(
+                    200,
+                    json=[
+                        {
+                            "id": "review-1",
+                            "camera": "lukow_c8c_60",
+                            "severity": "alert",
+                            "start_time": 1710000000,
+                            "end_time": 1710000030,
+                            "data": {"objects": ["person"], "detections": ["event-raw-1"]},
+                        }
+                    ],
+                )
+            return httpx.Response(404, text="not found")
+
+        payload = fetch_frigate_events("http://127.0.0.1:5000", transport=httpx.MockTransport(handler))
+
+        self.assertTrue(payload["reachable"])
+        self.assertEqual(payload["events"][0]["id"], "review-1")
+        self.assertEqual(payload["events"][0]["camera"], "lukow_c8c_60")
+        self.assertEqual(payload["events"][0]["label"], "person")
+        self.assertEqual(payload["events"][0]["type"], "review")
+        self.assertEqual(requested_paths[-1], "/api/review")
+
     def test_recordings_use_limited_review_query(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
             self.assertEqual(request.url.path, "/api/review")

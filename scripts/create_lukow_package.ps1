@@ -27,9 +27,12 @@ $rootFiles = @(
     "pyproject.toml",
     "README.md",
     "secrets.local.example.env",
+    "SKANUJ_NVR_LUKOW.bat",
     "START_PANEL_LUKOW.bat",
     "START_NVR_LUKOW.bat",
+    "STOP_PANEL_LUKOW.bat",
     "TEST_DIRECT_LUKOW.bat",
+    "TEST_STABILITY_LUKOW.bat",
     "TEST_STREAMY_LUKOW.bat",
     "UPDATE_LUKOW.bat"
 )

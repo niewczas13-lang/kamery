@@ -61,6 +61,28 @@ Do not commit `secrets.local.env`.
 database and `CAMERA102_PASSWORD` is configured, the Lukow start scripts render
 it as an experimental stream so the operator wall can show a manual-load tile.
 
+## Recorder (NVR) restream source
+
+Each camera can optionally pull its go2rtc streams from the physical recorder
+instead of the camera itself (`rtsp_source_*` columns on `cameras`). The camera
+then keeps a single RTSP session (to the recorder), which avoids the per-camera
+session limit suspected behind the C8C `EOF` / `wrong response on DESCRIBE`
+drops. ONVIF/PTZ and snapshots keep using the camera `host` directly.
+
+Configuration lives in `lukow_seed.py`:
+
+1. Set `LUKOW_NVR_RESTREAM["host"]` to the recorder IP and `enabled: True`.
+2. Map camera slugs to recorder channel numbers in `LUKOW_NVR_CHANNELS`
+   (Hikvision/EZVIZ scheme: channel N -> `/Streaming/Channels/N01` MAIN,
+   `/Streaming/Channels/N02` SUB).
+3. Add `NVR_PASSWORD=<recorder RTSP password>` to `secrets.local.env`.
+4. Re-run the seed + go2rtc runtime render (the Lukow start scripts do both).
+
+Cameras without a channel mapping stay on direct RTSP, so the recorder source
+can be rolled out camera by camera (e.g. C8C 60 first). Streams pulled via the
+recorder carry the warning `stream is pulled via recorder (NVR) restream
+instead of direct camera RTSP` in `/api/v1/streams`.
+
 ## Preload for the Operator Wall
 
 The generated runtime config includes `preload` entries for video-only SUB
@@ -68,8 +90,8 @@ streams used by the operator wall, including manual-load C8C SUB streams. This
 keeps go2rtc connected to the camera so the wall is less likely to cold-start
 RTSP when a tile mounts or reloads.
 
-This is not a DVR cache. It trades a small amount of constant camera/go2rtc load
-for fewer visible loading cycles.
+This is not a DVR cache and it does not commit runtime config. It trades a small
+amount of constant camera/go2rtc load for fewer visible loading cycles.
 
 To include the unstable diagnostic stream for `.102`, render with:
 

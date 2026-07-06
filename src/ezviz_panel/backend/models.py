@@ -47,6 +47,15 @@ class Camera(Base, TimestampMixin):
     sub_stream_path: Mapped[str | None] = mapped_column(String(260))
     secondary_main_stream_path: Mapped[str | None] = mapped_column(String(260))
     secondary_sub_stream_path: Mapped[str | None] = mapped_column(String(260))
+    # Optional recorder/NVR restream source used by go2rtc instead of the direct
+    # camera RTSP endpoint; ONVIF/PTZ keeps talking to `host` directly.
+    rtsp_source_host: Mapped[str | None] = mapped_column(String(260))
+    rtsp_source_username: Mapped[str | None] = mapped_column(String(160))
+    rtsp_source_password_secret_ref: Mapped[str | None] = mapped_column(String(160))
+    rtsp_source_main_path: Mapped[str | None] = mapped_column(String(260))
+    rtsp_source_sub_path: Mapped[str | None] = mapped_column(String(260))
+    rtsp_source_secondary_main_path: Mapped[str | None] = mapped_column(String(260))
+    rtsp_source_secondary_sub_path: Mapped[str | None] = mapped_column(String(260))
     video_codec: Mapped[str | None] = mapped_column(String(64))
     audio_codec: Mapped[str | None] = mapped_column(String(64))
     video_status: Mapped[str] = mapped_column(String(32), default="unknown")

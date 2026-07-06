@@ -18,6 +18,7 @@ from .secrets import load_secret_refs
 
 
 HEVC_WARNING = "HEVC/H.265 stream may need go2rtc playback support or the experimental H.264 fallback."
+RECORDER_SOURCE_WARNING = "stream is pulled via recorder (NVR) restream instead of direct camera RTSP"
 C8C60_DIAGNOSTIC_WARNING = "diagnostic alternate C8C 60 /ch1/sub stream"
 C8C60_DIAGNOSTIC_PATH = "/ch1/sub"
 STREAM_OVERRIDE_FIELDS = {
@@ -34,6 +35,16 @@ class Go2RtcConfigError(ValueError):
 
 class MissingSecretError(Go2RtcConfigError):
     pass
+
+
+@dataclass(frozen=True)
+class StreamEndpoint:
+    path: str
+    host: str
+    rtsp_username: str
+    rtsp_password_secret_ref: str | None
+    via_recorder: bool
+    metadata_path: str
 
 
 @dataclass(frozen=True)
@@ -394,14 +405,17 @@ def _stream_descriptors_for_camera(
 ) -> list[StreamDescriptor]:
     metadata = _probe_metadata_by_path(camera)
     descriptors: list[StreamDescriptor] = []
-    for role, path in _stream_entries_for_camera(camera, include_unstable_streams=include_unstable_streams):
-        stream_metadata = metadata.get(path, {})
+    for role, endpoint in _stream_entries_for_camera(camera, include_unstable_streams=include_unstable_streams):
+        stream_metadata = metadata.get(endpoint.metadata_path, {})
         video_codec = _str_or_none(stream_metadata.get("video_codec")) or camera.video_codec
         audio_codec = _str_or_none(stream_metadata.get("audio_codec")) or camera.audio_codec
         resolution = _str_or_none(stream_metadata.get("resolution"))
         fps = _float_or_none(stream_metadata.get("fps"))
         has_audio = bool(stream_metadata.get("has_audio")) if "has_audio" in stream_metadata else bool(camera.has_audio)
         quality_role = _quality_role(role)
+        warnings = _stream_warnings(video_codec)
+        if endpoint.via_recorder:
+            warnings.append(RECORDER_SOURCE_WARNING)
         descriptors.append(
             StreamDescriptor(
                 stream_name=f"{camera.slug}_{role}",
@@ -410,7 +424,7 @@ def _stream_descriptors_for_camera(
                 camera_slug=camera.slug,
                 location_id=camera.location_id,
                 stream_role=role,
-                path=path,
+                path=endpoint.path,
                 video_codec=video_codec,
                 audio_codec=audio_codec,
                 resolution=resolution,
@@ -423,10 +437,10 @@ def _stream_descriptors_for_camera(
                 is_recommended_for_recording=quality_role == "main",
                 is_recommended_for_detection=quality_role == "sub",
                 playback_status=_playback_status(video_codec),
-                warnings=_stream_warnings(video_codec),
-                host=camera.host,
-                rtsp_username=camera.rtsp_username,
-                rtsp_password_secret_ref=camera.rtsp_password_secret_ref,
+                warnings=warnings,
+                host=endpoint.host,
+                rtsp_username=endpoint.rtsp_username,
+                rtsp_password_secret_ref=endpoint.rtsp_password_secret_ref,
             )
         )
     if include_diagnostic_streams:
@@ -476,7 +490,7 @@ def _diagnostic_stream_descriptors_for_camera(camera: Camera, metadata: dict[str
     ]
 
 
-def _stream_entries_for_camera(camera: Camera, *, include_unstable_streams: bool = False) -> list[tuple[str, str]]:
+def _stream_entries_for_camera(camera: Camera, *, include_unstable_streams: bool = False) -> list[tuple[str, StreamEndpoint]]:
     if camera.video_status in {"failed", "unavailable"}:
         return []
     reliability = camera_reliability_status(camera)
@@ -484,12 +498,39 @@ def _stream_entries_for_camera(camera: Camera, *, include_unstable_streams: bool
         return []
     suffix = "_experimental" if reliability == "unstable" else ""
     entries = [
-        (f"main{suffix}", camera.main_stream_path),
-        (f"sub{suffix}", camera.sub_stream_path),
-        (f"lens2_main{suffix}", camera.secondary_main_stream_path),
-        (f"lens2_sub{suffix}", camera.secondary_sub_stream_path),
+        (f"main{suffix}", camera.main_stream_path, camera.rtsp_source_main_path),
+        (f"sub{suffix}", camera.sub_stream_path, camera.rtsp_source_sub_path),
+        (f"lens2_main{suffix}", camera.secondary_main_stream_path, camera.rtsp_source_secondary_main_path),
+        (f"lens2_sub{suffix}", camera.secondary_sub_stream_path, camera.rtsp_source_secondary_sub_path),
     ]
-    return [(role, path) for role, path in entries if path]
+    endpoints: list[tuple[str, StreamEndpoint]] = []
+    for role, direct_path, source_path in entries:
+        endpoint = _stream_endpoint(camera, direct_path=direct_path, source_path=source_path)
+        if endpoint is not None:
+            endpoints.append((role, endpoint))
+    return endpoints
+
+
+def _stream_endpoint(camera: Camera, *, direct_path: str | None, source_path: str | None) -> StreamEndpoint | None:
+    if camera.rtsp_source_host and source_path:
+        return StreamEndpoint(
+            path=source_path,
+            host=camera.rtsp_source_host,
+            rtsp_username=camera.rtsp_source_username or "admin",
+            rtsp_password_secret_ref=camera.rtsp_source_password_secret_ref,
+            via_recorder=True,
+            metadata_path=direct_path or source_path,
+        )
+    if direct_path:
+        return StreamEndpoint(
+            path=direct_path,
+            host=camera.host,
+            rtsp_username=camera.rtsp_username,
+            rtsp_password_secret_ref=camera.rtsp_password_secret_ref,
+            via_recorder=False,
+            metadata_path=direct_path,
+        )
+    return None
 
 
 def _probe_metadata_by_path(camera: Camera) -> dict[str, dict[str, Any]]:

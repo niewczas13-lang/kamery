@@ -144,9 +144,32 @@ def fetch_frigate_events(
         timeout=timeout,
         transport=transport,
     )
-    if not payload["reachable"]:
+    if payload["reachable"]:
+        return {"reachable": True, "events": sanitize_sensitive_object(payload["data"]), "error": None}
+    review = _fetch_frigate_json(frigate_url, ["/api/review?limit=50", "/api/review"], timeout=timeout, transport=transport)
+    if not review["reachable"]:
         return {"reachable": False, "events": None, "error": payload["error"]}
-    return {"reachable": True, "events": sanitize_sensitive_object(payload["data"]), "error": None}
+    items = review["data"] if isinstance(review["data"], list) else []
+    events = [_review_item_as_event(item) for item in items if isinstance(item, dict)]
+    return {"reachable": True, "events": sanitize_sensitive_object(events), "error": None}
+
+
+def _review_item_as_event(item: dict[str, Any]) -> dict[str, Any]:
+    data = item.get("data") if isinstance(item.get("data"), dict) else {}
+    objects = data.get("objects") if isinstance(data.get("objects"), list) else []
+    label = objects[0] if objects else item.get("severity")
+    event: dict[str, Any] = {
+        "id": item.get("id"),
+        "camera": item.get("camera"),
+        "label": label,
+        "type": "review",
+        "start_time": item.get("start_time"),
+        "end_time": item.get("end_time"),
+    }
+    for media_key in ("has_clip", "has_snapshot"):
+        if media_key in item:
+            event[media_key] = item[media_key]
+    return event
 
 
 def fetch_frigate_event(
